@@ -23,8 +23,11 @@ namespace Blaze.Framework.RawInput.Sample
             ListDevices();
 
             // Setup the devices
-            RegisterMouse(DeviceFlags.InputSink, form.Handle);
+            RegisterMouse(DeviceFlags.InputSink | DeviceFlags.DeviceNotify, form.Handle);
             RegisterKeyboard(DeviceFlags.None);
+
+            // Listen to device changes
+            RawInput.DeviceChanged += OnDeviceChanged;
 
             Console.WriteLine();
             Application.Run(form);
@@ -112,6 +115,18 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
             Console.Write($"Window {hwnd:x}, Device {device:x}: ");
             Console.WriteLine($"(x,y):({args.X},{args.Y}), Buttons: {args.Buttons} {buttonFlags}, State: {mode}, Wheel: {args.WheelDelta}");
+        }
+
+        private static void OnDeviceChanged(IntPtr device, DeviceChange change)
+        {
+            Console.Write($"Device {device:x}: ");
+            Console.WriteLine(change switch
+            {
+                DeviceChange.Arrival => "The device has been added to the system.",
+                DeviceChange.Removal => "The device has been removed from the system.",
+
+                _ => "Unknown device change notification!"
+            });
         }
     }
 }

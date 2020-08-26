@@ -146,6 +146,15 @@ namespace Blaze.Framework.RawInput
             remove { RawInputMessageFilter.Input -= value; }
         }
 
+        /// <summary>
+        ///   Occurs when a raw input device has been added to or removed from the system.
+        /// </summary>
+        public static event DeviceChangedEventHandler DeviceChanged
+        {
+            add { RawInputMessageFilter.DeviceChanged += value; }
+            remove { RawInputMessageFilter.DeviceChanged -= value; }
+        }
+
         #endregion
     }
 }

@@ -13,25 +13,29 @@ namespace Blaze.Framework.RawInput
     /// </summary>
     internal class RawInputMessageFilter : IMessageFilter
     {
-        private const int WM_INPUT = 0x00FF;
+        private const int WM_INPUT               = 0x00FF;
+        private const int WM_INPUT_DEVICE_CHANGE = 0x00FE;
 
         public virtual bool PreFilterMessage(ref Message message)
         {
             if (message.Msg == WM_INPUT)
-                HandleMessage(message.HWnd, message.LParam);
+                HandleInput(message.HWnd, message.LParam);
+
+            else if (message.Msg == WM_INPUT_DEVICE_CHANGE)
+                HandleDeviceChange(message.LParam, message.WParam);
 
             return false;
         }
 
         /// <summary>
-        ///   Handles a RawInput message manually.
+        ///   Handles a RawInput message.
         /// </summary>
         /// <param name="hWnd">The handle of the window that received the RawInput message.</param>
         /// <param name="ptrRawInputMessage">A pointer to a RawInput message.</param>
         /// <remarks>
         ///   This method can be used directly when handling RawInput messages from non-WinForms application.
         /// </remarks>
-        public static unsafe void HandleMessage(IntPtr hWnd, IntPtr ptrRawInputMessage)
+        private static unsafe void HandleInput(IntPtr hWnd, IntPtr ptrRawInputMessage)
         {
             uint dataLength = 0;
             GetRawInputData(ptrRawInputMessage, RawInputDataType.Input, IntPtr.Zero, ref dataLength, (uint) Unsafe.SizeOf<RawInputData.RawInputHeader>());
@@ -76,6 +80,20 @@ namespace Blaze.Framework.RawInput
             }
         }
 
+        /// <summary>
+        ///   Handles a RawInput device change message.
+        /// </summary>
+        /// <param name="deviceHandle">Handle to the device that has changed.</param>
+        /// <param name="deviceChange">A value indicating the change.</param>
+        private static void HandleDeviceChange(IntPtr deviceHandle, IntPtr deviceChange)
+        {
+            var change = (DeviceChange) deviceChange;
+
+            // TODO: Update RawInput.Devices?
+
+            DeviceChanged?.Invoke(deviceHandle, change);
+        }
+
         #region Events
 
         /// <summary>
@@ -92,6 +110,11 @@ namespace Blaze.Framework.RawInput
         ///   Occurs when a raw input event is received.
         /// </summary>
         internal static event RawInputEventHandler Input;
+
+        /// <summary>
+        ///   Occurs when a raw input device has been added to or removed from the system.
+        /// </summary>
+        internal static event DeviceChangedEventHandler DeviceChanged;
 
         #endregion
     }
