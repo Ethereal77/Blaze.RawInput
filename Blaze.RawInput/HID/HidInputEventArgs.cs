@@ -25,7 +25,7 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Number of HID structures in the <see cref="RawData"/>.
         /// </summary>
-        private readonly uint Count;
+        public readonly uint Count;
 
         /// <summary>
         ///   Size of the HID structures in the <see cref="RawData"/>, in bytes.
