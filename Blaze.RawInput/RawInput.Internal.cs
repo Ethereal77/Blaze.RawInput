@@ -12,6 +12,17 @@ namespace Blaze.Framework.RawInput
     static partial class RawInput
     {
         /// <summary>
+        ///   Gets the type of raw input received in a <c>WM_INPUT</c> message.
+        /// </summary>
+        /// <param name="wParam">The value of <see cref="Message.WParam"/>.</param>
+        /// <returns>
+        ///   <see cref="InputMode.Input"/> if the input is in the regular message flow;
+        ///   or <see cref="InputMode.InputSink"/> if the input is sink only.
+        /// </returns>
+        /// <unmanaged>GET_RAWINPUT_CODE_WPARAM(wParam)</unmanaged>
+        internal static InputMode GetRawInputCode(IntPtr wParam) => (InputMode) ((uint) wParam & 0xFF);
+
+        /// <summary>
         ///   Retrieves the raw input from the specified device.
         /// </summary>
         /// <param name="rawInputDataHandle">

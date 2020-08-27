@@ -20,6 +20,7 @@ namespace Blaze.Framework.RawInput
     public readonly ref struct KeyboardInputEventArgs
     {
         private readonly RawKeyboard keyboardInput;
+        private readonly IntPtr inputMode;
 
         /// <summary>
         ///   Gets the key.
@@ -46,14 +47,21 @@ namespace Blaze.Framework.RawInput
         /// </summary>
         public readonly uint ExtraInformation => keyboardInput.ExtraInformation;
 
+        /// <summary>
+        ///   Gets the input mode of the event.
+        /// </summary>
+        public readonly InputMode InputMode => RawInput.GetRawInputCode(inputMode);
+
 
         /// <summary>
         ///   Initializes a new instance of the <see cref="KeyboardInputEventArgs" /> structure.
         /// </summary>
         /// <param name="rawInput">The raw input data.</param>
-        internal KeyboardInputEventArgs(in RawInputData rawInput)
+        /// <param name="rawInputMode">The input mode as specified in <see cref="Message.WParam"/></param>
+        internal KeyboardInputEventArgs(in RawInputData rawInput, IntPtr rawInputMode)
         {
             keyboardInput = rawInput.Data.Keyboard;
+            inputMode = rawInputMode;
         }
     }
 }
