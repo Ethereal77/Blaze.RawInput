@@ -40,6 +40,9 @@ namespace Blaze.Framework.RawInput.Sample
                 Width = 300,
                 Height = 200,
 
+                Top = 10,
+                Left = 10,
+
                 Text = "Blaze RawInput sample",
 
                 FormBorderStyle = FormBorderStyle.FixedSingle,
@@ -64,27 +67,42 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void ListDevices()
         {
+            var fg = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+
             foreach (var device in RawInput.Devices)
             {
-                Console.WriteLine($"Device: {device.Handle} Type: {device.Type} Name: {device.Name}");
-                Console.WriteLine(device switch
-                {
-                    KeyboardInfo kbd => $"  Total keys: {kbd.TotalKeyCount}, Function Keys: {kbd.FunctionKeyCount}, Indicators: {kbd.IndicatorCount}, " +
-                                        $"Type: {kbd.KeyboardType}-{kbd.Subtype}, Mode: {kbd.KeyboardMode}",
-
-                    MouseInfo mouse => $"  Id: {mouse.Id}, Buttons: {mouse.ButtonCount}, Sample rate: {mouse.SampleRate}, HWheel: {mouse.HasHorizontalWheel}",
-
-                    HidInfo hid => $"  Vendor: {hid.VendorId}, Product: {hid.ProductId}, Version: {hid.VersionNumber}, Usage page: {hid.UsagePage}, Usage: {hid.Usage}",
-
-                    _ => ""
-                });
+                PrintDevice(device);
                 Console.WriteLine();
             }
+
+            Console.ForegroundColor = fg;
+        }
+
+        private static void PrintDevice(DeviceInfo device)
+        {
+            Console.WriteLine($"Device: 0x{(uint)device.Handle:X} Type: {device.Type} Name: {device.Name}");
+            Console.WriteLine(device switch
+            {
+                KeyboardInfo kbd => $"  Total keys: {kbd.TotalKeyCount}, Function Keys: {kbd.FunctionKeyCount}, Indicators: {kbd.IndicatorCount}, " +
+                                    $"Type: {kbd.KeyboardType}-{kbd.Subtype}, Mode: {kbd.KeyboardMode}",
+
+                MouseInfo mouse => $"  Id: {mouse.Id}, Buttons: {mouse.ButtonCount}, Sample rate: {mouse.SampleRate}, HWheel: {mouse.HasHorizontalWheel}",
+
+                HidInfo hid => $"  Vendor: {hid.VendorId}, Product: {hid.ProductId}, Version: {hid.VersionNumber}, Usage page: {hid.UsagePage}, Usage: {hid.Usage}",
+
+                _ => ""
+            });
         }
 
         private static void RegisterMouse(DeviceFlags deviceFlags, IntPtr windowHandle = default)
         {
+            var fg = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+
             Console.WriteLine($"Registering mouse devices with flags [{deviceFlags}].");
+
+            Console.ForegroundColor = fg;
 
             RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericMouse, deviceFlags, windowHandle);
             RawInput.MouseInput += OnMouseInput;
@@ -92,7 +110,12 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void RegisterKeyboard(DeviceFlags deviceFlags, IntPtr windowHandle = default)
         {
+            var fg = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+
             Console.WriteLine($"Registering keyboard devices with flags [{deviceFlags}].");
+
+            Console.ForegroundColor = fg;
 
             RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericKeyboard, deviceFlags, windowHandle);
             RawInput.KeyboardInput += OnKeyboardInput;
@@ -100,33 +123,38 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void OnKeyboardInput(IntPtr device, IntPtr hwnd, in KeyboardInputEventArgs args)
         {
-            var key = Enum.GetName(typeof(Keys), args.Key);
-            var state = Enum.GetName(typeof(KeyState), args.State);
-            var flags = Enum.GetName(typeof(ScanCodeFlags), args.ScanCodeFlags);
-
-            Console.Write($"Window {hwnd:x}, Device {device:x}: ");
-            Console.WriteLine($"Key: {key}, State: {state}, ScanCodeFlags: {flags}, Make code: {args.MakeCode}");
+            var fg = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write($"Window 0x{(uint)hwnd:X}, Device 0x{(uint)device:X}, Mode: {args.InputMode}: ");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine($"Key: {args.Key}, Make code: {args.MakeCode}, State: {args.State}, ScanCodeFlags: {args.ScanCodeFlags}");
+            Console.ForegroundColor = fg;
         }
 
         private static void OnMouseInput(IntPtr device, IntPtr hwnd, in MouseInputEventArgs args)
         {
-            var buttonFlags = Enum.GetName(typeof(MouseButtonFlags), args.ButtonFlags);
-            var mode = Enum.GetName(typeof(MouseMode), args.Mode);
-
-            Console.Write($"Window {hwnd:x}, Device {device:x}: ");
-            Console.WriteLine($"(x,y):({args.X},{args.Y}), Buttons: {args.Buttons} {buttonFlags}, State: {mode}, Wheel: {args.WheelDelta}");
+            var fg = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write($"Window 0x{(uint)hwnd:X}, Device 0x{(uint)device:X}, Mode: {args.InputMode}: ");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine($"(X:{args.X}, Y:{args.Y}), State: {args.Mode}, Buttons: {args.Buttons} {args.ButtonFlags}, Wheel: {args.WheelDelta}");
+            Console.ForegroundColor = fg;
         }
 
         private static void OnDeviceChanged(IntPtr device, DeviceChange change)
         {
-            Console.Write($"Device {device:x}: ");
+            var fg = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Cyan;
+
             Console.WriteLine(change switch
             {
-                DeviceChange.Arrival => "The device has been added to the system.",
-                DeviceChange.Removal => "The device has been removed from the system.",
+                DeviceChange.Arrival => $"The device 0x{(uint)device:X} has been added to the system.",
+                DeviceChange.Removal => $"The device 0x{(uint)device:X} has been removed from the system.",
 
                 _ => "Unknown device change notification!"
             });
+
+            Console.ForegroundColor = fg;
         }
     }
 }
