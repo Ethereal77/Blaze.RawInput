@@ -81,15 +81,15 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void PrintDevice(DeviceInfo device)
         {
-            Console.WriteLine($"Device: 0x{(uint)device.Handle:X} Type: {device.Type} Name: {device.Name}");
+            Console.WriteLine($"Device: 0x{device.Handle.ToString("X")} Type: {device.Type} Name: {device.Name}");
             Console.WriteLine(device switch
             {
                 KeyboardInfo kbd => $"  Total keys: {kbd.TotalKeyCount}, Function Keys: {kbd.FunctionKeyCount}, Indicators: {kbd.IndicatorCount}, " +
-                                    $"Type: {kbd.KeyboardType}-{kbd.Subtype}, Mode: {kbd.KeyboardMode}",
+                                    $"Type: {kbd.KeyboardType:x}-{kbd.Subtype:x}, Mode: {kbd.KeyboardMode:x}",
 
-                MouseInfo mouse => $"  Id: {mouse.Id}, Buttons: {mouse.ButtonCount}, Sample rate: {mouse.SampleRate}, HWheel: {mouse.HasHorizontalWheel}",
+                MouseInfo mouse => $"  Id: {mouse.Id:x}, Buttons: {mouse.ButtonCount}, Sample rate: {mouse.SampleRate}, HWheel: {mouse.HasHorizontalWheel}",
 
-                HidInfo hid => $"  Vendor: {hid.VendorId}, Product: {hid.ProductId}, Version: {hid.VersionNumber}, Usage page: {hid.UsagePage}, Usage: {hid.Usage}",
+                HidInfo hid => $"  Vendor: {hid.VendorId:x}, Product: {hid.ProductId:x}, Version: {hid.VersionNumber}, Usage page: {hid.UsagePage}, Usage: {hid.Usage}",
 
                 _ => ""
             });
@@ -125,7 +125,7 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
         {
             var fg = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"Window 0x{(uint)hwnd:X}, Device 0x{(uint)device:X}, Mode: {args.InputMode}: ");
+            Console.Write($"Window 0x{hwnd.ToString("X")}, Device 0x{device.ToString("X")}, Mode: {args.InputMode}: ");
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine($"Key: {args.Key}, Make code: {args.MakeCode}, State: {args.State}, ScanCodeFlags: {args.ScanCodeFlags}");
             Console.ForegroundColor = fg;
@@ -135,9 +135,9 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
         {
             var fg = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"Window 0x{(uint)hwnd:X}, Device 0x{(uint)device:X}, Mode: {args.InputMode}: ");
+            Console.Write($"Window 0x{hwnd.ToString("X")}, Device 0x{device.ToString("X")}, Mode: {args.InputMode}: ");
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine($"(X:{args.X}, Y:{args.Y}), State: {args.Mode}, Buttons: {args.Buttons} {args.ButtonFlags}, Wheel: {args.WheelDelta}");
+            Console.WriteLine($"(X:{args.X}, Y:{args.Y}), State: {args.Mode}, Buttons: {args.Buttons:x} {args.ButtonFlags}, Wheel: {args.WheelDelta}");
             Console.ForegroundColor = fg;
         }
 
@@ -148,7 +148,7 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
             Console.WriteLine(change switch
             {
-                DeviceChange.Arrival => $"The device 0x{(uint)device:X} has been added to the system." + Environment.NewLine +
+                DeviceChange.Arrival => $"The device 0x{device.ToString("X")} has been added to the system." + Environment.NewLine +
                                         "  " + RawInput.Devices[device] switch
                                                {
                                                    KeyboardInfo kb => "Keyboard " + kb.Name,
@@ -156,7 +156,8 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
                                                    HidInfo hid => "HID " + hid.Name,
                                                    _ => "Unkown device type!"
                                                },
-                DeviceChange.Removal => $"The device 0x{(uint)device:X} has been removed from the system.",
+
+                DeviceChange.Removal => $"The device 0x{device.ToString("X")} has been removed from the system.",
 
                 _ => "Unknown device change notification!"
             });
