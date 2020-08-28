@@ -93,7 +93,7 @@ namespace Blaze.Framework.RawInput
         {
             var change = (DeviceChange) deviceChange;
 
-            // TODO: Update RawInput.Devices?
+            Devices.NotifyDeviceChanged(deviceHandle, change);
 
             DeviceChanged?.Invoke(deviceHandle, change);
         }

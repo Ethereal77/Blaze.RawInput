@@ -148,7 +148,14 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
             Console.WriteLine(change switch
             {
-                DeviceChange.Arrival => $"The device 0x{(uint)device:X} has been added to the system.",
+                DeviceChange.Arrival => $"The device 0x{(uint)device:X} has been added to the system." + Environment.NewLine +
+                                        "  " + RawInput.Devices[device] switch
+                                               {
+                                                   KeyboardInfo kb => "Keyboard " + kb.Name,
+                                                   MouseInfo m => "Mouse " + m.Name,
+                                                   HidInfo hid => "HID " + hid.Name,
+                                                   _ => "Unkown device type!"
+                                               },
                 DeviceChange.Removal => $"The device 0x{(uint)device:X} has been removed from the system.",
 
                 _ => "Unknown device change notification!"

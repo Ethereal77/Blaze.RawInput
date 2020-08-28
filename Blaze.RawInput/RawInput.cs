@@ -18,52 +18,12 @@ namespace Blaze.Framework.RawInput
     {
         #region Device Enumeration and Information
 
-        private static DeviceInfo[] g_Devices;
+        private static DeviceInfoCollection g_Devices;
 
         /// <summary>
         ///   Gets a collection of the available RawInput devices attached to the system.
         /// </summary>
-        public static IEnumerable<DeviceInfo> Devices => g_Devices ??= GetDeviceInfos();
-
-        /// <summary>
-        ///   Gets information about the available raw input devices attached to the system.
-        /// </summary>
-        /// <returns>A array of <see cref="DeviceInfo"/> with the available input devices.</returns>
-        private static unsafe DeviceInfo[] GetDeviceInfos()
-        {
-            uint numDevices = 0;
-            GetRawInputDeviceList(null, ref numDevices, (uint) Unsafe.SizeOf<RawInputDeviceList>());
-            if (numDevices == 0)
-                return null;
-
-            var rawInputDevices = new RawInputDeviceList[numDevices];
-            GetRawInputDeviceList(rawInputDevices, ref numDevices, (uint) Unsafe.SizeOf<RawInputDeviceList>());
-            var deviceInfos = new DeviceInfo[numDevices];
-            for (int index = 0; index < numDevices; ++index)
-            {
-                IntPtr deviceHandle = rawInputDevices[index].Device;
-
-                // Get the name of the device
-                uint nameLength = 0;
-                GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceName, IntPtr.Zero, ref nameLength);
-                char* nameChars = stackalloc char[(int)nameLength];
-                GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceName, (IntPtr) nameChars, ref nameLength);
-
-                int indexCh = 0;
-                do { } while (indexCh <= nameLength && nameChars[indexCh++] != 0);
-                string deviceName = new string(nameChars, 0, indexCh == 0 ? 0 : indexCh - 1);
-
-                // Get device info
-                uint infoLength = 0;
-                GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceInfo, IntPtr.Zero, ref infoLength);
-                byte* infoBytes = stackalloc byte[(int)infoLength];
-                GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceInfo, (IntPtr) infoBytes, ref infoLength);
-
-                deviceInfos[index] = DeviceInfo.Create(ref *(RawDeviceInformation*) infoBytes, deviceName, deviceHandle);
-            }
-
-            return deviceInfos;
-        }
+        public static DeviceInfoCollection Devices => g_Devices ??= new DeviceInfoCollection();
 
         #endregion
 
@@ -149,6 +109,11 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Occurs when a raw input device has been added to or removed from the system.
         /// </summary>
+        /// <remarks>
+        ///   This event provides the handle of the device that was attached or removed from the system.
+        ///   If the change is an arrival of a new device attached to the system, you can get information
+        ///   about the device from <see cref="Devices"/>.
+        /// </remarks>
         public static event DeviceChangedEventHandler DeviceChanged
         {
             add { RawInputMessageFilter.DeviceChanged += value; }
