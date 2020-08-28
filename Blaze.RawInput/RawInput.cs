@@ -1,9 +1,6 @@
 ﻿// Copyright © 2020 Infinisis
 
 using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 using Blaze.Interop.Win32;
@@ -18,12 +15,13 @@ namespace Blaze.Framework.RawInput
     {
         #region Device Enumeration and Information
 
-        private static DeviceInfoCollection g_Devices;
+        private static Lazy<DeviceInfoCollection> g_Devices =
+            new Lazy<DeviceInfoCollection>(() => new DeviceInfoCollection(), isThreadSafe: true);
 
         /// <summary>
         ///   Gets a collection of the available RawInput devices attached to the system.
         /// </summary>
-        public static DeviceInfoCollection Devices => g_Devices ??= new DeviceInfoCollection();
+        public static DeviceInfoCollection Devices => g_Devices.Value;
 
         #endregion
 
