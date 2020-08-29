@@ -5,7 +5,7 @@ namespace Blaze.Framework.RawInput
     /// <summary>
     ///   Defines the the type of raw input received in an event.
     /// </summary>
-    public enum InputMode : uint
+    public enum InputMode : byte
     {
         /// <summary>
         ///   The input event forms part of the regular message flow.
