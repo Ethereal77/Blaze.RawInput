@@ -1,7 +1,6 @@
 ﻿// Copyright © 2020 Infinisis
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 using static Blaze.Framework.RawInput.RawInput;
@@ -39,25 +38,24 @@ namespace Blaze.Framework.RawInput
         /// <remarks>
         ///   This method can be used directly when handling RawInput messages from non-WinForms application.
         /// </remarks>
-        private static unsafe void HandleInput(IntPtr hWnd, IntPtr ptrRawInputMessage, IntPtr rawInputMode)
+        private static void HandleInput(IntPtr hWnd, IntPtr ptrRawInputMessage, IntPtr rawInputMode)
         {
-            uint dataLength = 0;
-            GetRawInputData(ptrRawInputMessage, RawInputDataType.Input, IntPtr.Zero, ref dataLength, (uint) Unsafe.SizeOf<RawInputData.RawInputHeader>());
+            uint dataLength = GetRawInputDataSize(ptrRawInputMessage);
             if (dataLength == 0)
                 return;
 
-            byte* inputData = stackalloc byte[(int) dataLength];
-            GetRawInputData(ptrRawInputMessage, RawInputDataType.Input, (IntPtr) inputData, ref dataLength, (uint) Unsafe.SizeOf<RawInputData.RawInputHeader>());
-            RawInputData* rawInputPtr = (RawInputData*) inputData;
-            var device = rawInputPtr->Header.Device;
-            switch (rawInputPtr->Header.Type)
+            Span<byte> inputData = stackalloc byte[(int) dataLength];
+            ref RawInputData rawInput = ref GetRawInputData(ptrRawInputMessage, inputData);
+
+            var device = rawInput.Header.Device;
+            switch (rawInput.Header.Type)
             {
                 case DeviceType.Mouse:
                     {
                         if (MouseInput is null)
                             break;
 
-                        var eventArgs = new MouseInputEventArgs(in *rawInputPtr, rawInputMode);
+                        var eventArgs = new MouseInputEventArgs(in rawInput, rawInputMode);
                         MouseInput(device, hWnd, in eventArgs);
                         break;
                     }
@@ -67,7 +65,7 @@ namespace Blaze.Framework.RawInput
                         if (KeyboardInput is null)
                             break;
 
-                        var eventArgs = new KeyboardInputEventArgs(in *rawInputPtr, rawInputMode);
+                        var eventArgs = new KeyboardInputEventArgs(in rawInput, rawInputMode);
                         KeyboardInput(device, hWnd, in eventArgs);
                         break;
                     }
@@ -77,7 +75,7 @@ namespace Blaze.Framework.RawInput
                         if (Input is null)
                             break;
 
-                        var eventArgs = new HidInputEventArgs(in *rawInputPtr, rawInputMode);
+                        var eventArgs = new HidInputEventArgs(in rawInput, rawInputMode);
                         Input(device, hWnd, in eventArgs);
                         break;
                     }

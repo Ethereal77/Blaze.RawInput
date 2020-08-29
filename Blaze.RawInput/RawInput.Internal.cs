@@ -11,6 +11,8 @@ namespace Blaze.Framework.RawInput
 {
     static partial class RawInput
     {
+        // == Get RawInput Code WParam ============================================================================= //
+
         /// <summary>
         ///   Gets the type of raw input received in a <c>WM_INPUT</c> message.
         /// </summary>
@@ -22,70 +24,71 @@ namespace Blaze.Framework.RawInput
         /// <unmanaged>GET_RAWINPUT_CODE_WPARAM(wParam)</unmanaged>
         internal static InputMode GetRawInputCode(IntPtr wParam) => (InputMode) ((uint) wParam & 0xFF);
 
+
+        // == Get RawInput Data ==================================================================================== //
+
+        /// <summary>
+        ///   Retrieves the size of the raw input data from the specified device.
+        /// </summary>
+        /// <param name="rawInputDataHandle">
+        ///   The handle to the <see cref="RawInputData"/> structure. This comes from <see cref="Message.LParam"/> for
+        ///   messages of type <c>WM_INPUT</c>.
+        /// </param>
+        /// <returns>
+        ///   The number of bytes of raw input data available for the specified device.
+        /// </returns>
+        internal static unsafe uint GetRawInputDataSize(IntPtr rawInputDataHandle)
+        {
+            uint dataSize;
+            GetRawInputData_((void*) rawInputDataHandle,
+                             (uint) RawInputDataType.Input,
+                             null,
+                             &dataSize,
+                             RawInputHeader.HeaderSize);
+            return dataSize;
+        }
+
         /// <summary>
         ///   Retrieves the raw input from the specified device.
         /// </summary>
         /// <param name="rawInputDataHandle">
-        ///   A handle to the <see cref="RawInputData"/> structure. This comes from <see cref="Message.LParam"/> for
+        ///   The handle to the <see cref="RawInputData"/> structure. This comes from <see cref="Message.LParam"/> for
         ///   messages of type <c>WM_INPUT</c>.
         /// </param>
-        /// <param name="dataType">The data in the <see cref="RawInputData"/> structure to reference.</param>
-        /// <param name="dataPtr">
-        ///   A pointer to the data that comes from the <see cref="RawInputData"/> structure.
-        ///   This depends on the value of <paramref name="dataType"/>. If <see cref="IntPtr.Zero"/>, the required size of
-        ///   the buffer is returned in <paramref name="dataSize"/>.</param>
-        /// <param name="dataSize">The size of the data in <paramref name="dataPtr"/>, in bytes.</param>
-        /// <param name="headerSize">The size of the <see cref="RawInputData.RawInputHeader" /> structure, in bytes.</param>
+        /// <param name="rawInputData">
+        ///   A correctly sized buffer (see <see cref="GetRawInputDataSize"/>) where to copy the data that comes from the
+        ///   <see cref="RawInputData"/> structure.
+        /// </param>
         /// <returns>
-        ///   If <paramref name="dataPtr"/> is <c>null</c> and the function is successful, the return value is 0.
-        ///   If <paramref name="dataPtr"/> is not <c>null</c> and the function is successful, the return value is the
-        ///   number of bytes copied into <paramref name="dataPtr"/>.
-        ///   If there is an error, the return value is -1.
+        ///   A reference to the <see cref="RawInputData"/> structure.
         /// </returns>
         /// <remarks>
         ///   This function gets the raw input one <see cref="RawInputData"/> structure at a time. In contrast,
         ///   <see cref="GetRawInputBuffer"/> gets an array of <see cref="RawInputData"/> structures.
         /// </remarks>
-        /// <unmanaged>unsigned int GetRawInputData([In] HRAWINPUT hRawInput,[In] unsigned int uiCommand,[Out, Buffer, Optional] void* pData,[InOut] unsigned int* pcbSize,[In] unsigned int cbSizeHeader)</unmanaged>
-        internal static unsafe int GetRawInputData(IntPtr rawInputDataHandle, RawInputDataType dataType, IntPtr dataPtr, ref uint dataSize, uint headerSize)
+        internal static unsafe ref RawInputData GetRawInputData(IntPtr rawInputDataHandle, Span<byte> rawInputData)
         {
-            fixed (uint* ptrDataSize = &dataSize)
-                return GetRawInputData_((void*) rawInputDataHandle, (uint) dataType, (void*) dataPtr, ptrDataSize, headerSize);
+            var dataSize = (uint) rawInputData.Length;
+
+            fixed (void* ptrRawInputData = &rawInputData[0])
+            {
+                GetRawInputData_((void*) rawInputDataHandle,
+                                 (uint) RawInputDataType.Input,
+                                 ptrRawInputData,
+                                 &dataSize,
+                                 RawInputHeader.HeaderSize);
+
+                RawInputData* rawInputPtr = (RawInputData*) ptrRawInputData;
+                return ref *rawInputPtr;
+            }
         }
 
+        /// <unmanaged>unsigned int GetRawInputData([In] HRAWINPUT hRawInput,[In] unsigned int uiCommand,[Out, Buffer, Optional] void* pData,[InOut] unsigned int* pcbSize,[In] unsigned int cbSizeHeader)</unmanaged>
         [DllImport("user32.dll", EntryPoint = "GetRawInputData", CallingConvention = CallingConvention.StdCall)]
         private static extern unsafe int GetRawInputData_(void* hRawInput, uint uiCommand, void* pData, uint* pcbSize, uint cbSizeHeader);
 
-        /// <summary>
-        ///   Retrieves information about the raw input device.
-        /// </summary>
-        /// <param name="handle">
-        ///   A handle to the raw input device. This comes from <see cref="RawInputData.RawInputHeader.Device" /> or from
-        ///   <see cref="GetRawInputDeviceList"/>.
-        /// </param>
-        /// <param name="infoType">Specifies what data will be returned in <paramref name="infoData"/>.</param>
-        /// <param name="infoData">
-        ///   A reference to a buffer that contains the information specified by <paramref name="infoType"/>.
-        ///   If it is <see cref="RawInputDeviceInfoType.DeviceInfo"/>, set <see cref="RawDeviceInformation.Size" />
-        ///   to <c>sizeof(<see cref="RawDeviceInformation"/>)</c> before calling this function.
-        /// </param>
-        /// <param name="infoDataSize">The size of the data in <paramref name="infoData"/>, in bytes.</param>
-        /// <returns>
-        ///   If successful, this function returns a non-negative number indicating the number of bytes copied to
-        ///   <paramref name="infoData"/>. If the buffer is not large enough for the data, the function returns -1.
-        ///   <para/>
-        ///   If <paramref name="infoData"/> is <c>null</c>, the function returns a value of zero. In both of these
-        ///   cases, <paramref name="infoDataSize"/> is set to the minimum size required for the data buffer.
-        /// </returns>
-        /// <unmanaged>unsigned int GetRawInputDeviceInfoW([In, Optional] void* hDevice,[In] unsigned int uiCommand,[Out, Buffer, Optional] void* pData,[InOut] unsigned int* pcbSize)</unmanaged>
-        internal static unsafe int GetRawInputDeviceInfo(IntPtr handle, RawInputDeviceInfoType infoType, IntPtr infoData, ref uint infoDataSize)
-        {
-            fixed (uint* ptrDataSize = &infoDataSize)
-                return GetRawInputDeviceInfoW_((void*) handle, (uint) infoType, (void*) infoData, ptrDataSize);
-        }
 
-        [DllImport("user32.dll", EntryPoint = "GetRawInputDeviceInfoW", CallingConvention = CallingConvention.StdCall)]
-        private static extern unsafe int GetRawInputDeviceInfoW_(void* hDevice, uint uiCommand, void* pData, uint* pcbSize);
+        // == Get RawInput Data (Buffered) ========================================================================= //
 
         /// <summary>
         ///   Performs a buffered read of the raw input data.
@@ -127,6 +130,43 @@ namespace Blaze.Framework.RawInput
         [DllImport("user32.dll", EntryPoint = "GetRawInputBuffer", CallingConvention = CallingConvention.StdCall)]
         private static extern unsafe int GetRawInputBuffer_(void* pData, uint* pcbSize, uint cbSizeHeader);
 
+
+        // == Get RawInput Device Info ============================================================================= //
+
+        /// <summary>
+        ///   Retrieves information about the raw input device.
+        /// </summary>
+        /// <param name="handle">
+        ///   A handle to the raw input device. This comes from <see cref="RawInputData.RawInputHeader.Device" /> or from
+        ///   <see cref="GetRawInputDeviceList"/>.
+        /// </param>
+        /// <param name="infoType">Specifies what data will be returned in <paramref name="infoData"/>.</param>
+        /// <param name="infoData">
+        ///   A reference to a buffer that contains the information specified by <paramref name="infoType"/>.
+        ///   If it is <see cref="RawInputDeviceInfoType.DeviceInfo"/>, set <see cref="RawDeviceInformation.Size" />
+        ///   to <c>sizeof(<see cref="RawDeviceInformation"/>)</c> before calling this function.
+        /// </param>
+        /// <param name="infoDataSize">The size of the data in <paramref name="infoData"/>, in bytes.</param>
+        /// <returns>
+        ///   If successful, this function returns a non-negative number indicating the number of bytes copied to
+        ///   <paramref name="infoData"/>. If the buffer is not large enough for the data, the function returns -1.
+        ///   <para/>
+        ///   If <paramref name="infoData"/> is <c>null</c>, the function returns a value of zero. In both of these
+        ///   cases, <paramref name="infoDataSize"/> is set to the minimum size required for the data buffer.
+        /// </returns>
+        /// <unmanaged>unsigned int GetRawInputDeviceInfoW([In, Optional] void* hDevice,[In] unsigned int uiCommand,[Out, Buffer, Optional] void* pData,[InOut] unsigned int* pcbSize)</unmanaged>
+        internal static unsafe int GetRawInputDeviceInfo(IntPtr handle, RawInputDeviceInfoType infoType, IntPtr infoData, ref uint infoDataSize)
+        {
+            fixed (uint* ptrDataSize = &infoDataSize)
+                return GetRawInputDeviceInfoW_((void*) handle, (uint) infoType, (void*) infoData, ptrDataSize);
+        }
+
+        [DllImport("user32.dll", EntryPoint = "GetRawInputDeviceInfoW", CallingConvention = CallingConvention.StdCall)]
+        private static extern unsafe int GetRawInputDeviceInfoW_(void* hDevice, uint uiCommand, void* pData, uint* pcbSize);
+
+
+        // == Register RawInput Devices ============================================================================ //
+
         /// <summary>
         ///   Registers the devices that supply the raw input data.
         /// </summary>
@@ -161,6 +201,9 @@ namespace Blaze.Framework.RawInput
         [DllImport("user32.dll", EntryPoint = "RegisterRawInputDevices", CallingConvention = CallingConvention.StdCall)]
         private static extern unsafe Bool RegisterRawInputDevices_(void* pRawInputDevices, uint uiNumDevices, uint cbSize);
 
+
+        // == Get RawInput Registered Devices ====================================================================== //
+
         /// <summary>
         ///   Retrieves the information about the raw input devices for the current application.
         /// </summary>
@@ -188,6 +231,9 @@ namespace Blaze.Framework.RawInput
 
         [DllImport("user32.dll", EntryPoint = "GetRegisteredRawInputDevices", CallingConvention = CallingConvention.StdCall)]
         private static extern unsafe int GetRegisteredRawInputDevices_(void* pRawInputDevices, uint* puiNumDevices, uint cbSize);
+
+
+        // == Get RawInput Devices ================================================================================= //
 
         /// <summary>
         ///   Enumerates the raw input devices attached to the system.
