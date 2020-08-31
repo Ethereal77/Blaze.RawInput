@@ -7,8 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpDX" Version="4.2.0" />
-
-    <ProjectReference Include="..\Blaze.RawInput\Blaze.RawInput.csproj" />
+    <ProjectReference Include="..\..\Blaze.RawInput\Blaze.RawInput.csproj" />
   </ItemGroup>
 </Project>
