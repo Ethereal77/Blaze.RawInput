@@ -71,21 +71,61 @@ namespace Blaze.Framework.RawInput
         #region Events
 
         /// <summary>
+        ///   Processes a <see cref="RawInputData"/> structure and dispatches the corresponding events.
+        /// </summary>
+        /// <param name="rawInput">Reference to the <see cref="RawInputData"/> structure.</param>
+        /// <param name="rawInputMode">Input mode of the received message.</param>
+        /// <param name="windowHandle">Handle of the window receiving the message.</param>
+        internal static void HandleRawInput(in RawInputData rawInput, InputMode rawInputMode = InputMode.Input, IntPtr windowHandle = default)
+        {
+            switch (rawInput.Header.Type)
+            {
+                case DeviceType.Mouse:
+                    RaiseMouseInput(rawInput.Header.Device, windowHandle, in rawInput, rawInputMode);
+                    break;
+
+                case DeviceType.Keyboard:
+                    RaiseKeyboardInput(rawInput.Header.Device, windowHandle, in rawInput, rawInputMode);
+                    break;
+
+                case DeviceType.HumanInputDevice:
+                    RaiseInput(rawInput.Header.Device, windowHandle, in rawInput, rawInputMode);
+                    break;
+            }
+        }
+
+        /// <summary>
         ///   Occurs when a keyboard input event is received.
         /// </summary>
-        public static event KeyboardInputEventHandler KeyboardInput
+        public static event KeyboardInputEventHandler KeyboardInput;
+
+        /// <summary>
+        ///   Raises the <see cref="KeyboardInput"/> event.
+        /// </summary>
+        internal static void RaiseKeyboardInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput, InputMode rawInputMode)
         {
-            add { RawInputMessageFilter.KeyboardInput += value; }
-            remove { RawInputMessageFilter.KeyboardInput -= value; }
+            if (KeyboardInput is null)
+                return;
+
+            var eventArgs = new KeyboardInputEventArgs(in rawInput, rawInputMode);
+            KeyboardInput(device, hWnd, in eventArgs);
         }
 
         /// <summary>
         ///   Occurs when a mouse input event is received.
         /// </summary>
-        public static event MouseInputEventHandler MouseInput
+        public static event MouseInputEventHandler MouseInput;
+
+        /// <summary>
+        ///   Raises the <see cref="MouseInput"/> event.
+        /// </summary>
+        internal static void RaiseMouseInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput, InputMode rawInputMode)
         {
-            add { RawInputMessageFilter.MouseInput += value; }
-            remove { RawInputMessageFilter.MouseInput -= value; }
+            if (MouseInput is null)
+                return;
+
+            var eventArgs = new MouseInputEventArgs(in rawInput, rawInputMode);
+            MouseInput(device, hWnd, in eventArgs);
         }
 
         /// <summary>
@@ -98,10 +138,18 @@ namespace Blaze.Framework.RawInput
         ///   For receiving notifications of mouse events, use <see cref="MouseInput"/>. For receiving
         ///   notifications of keyboard events, use <see cref="KeyboardInput"/>.
         /// </remarks>
-        public static event RawInputEventHandler Input
+        public static event RawInputEventHandler Input;
+
+        /// <summary>
+        ///   Raises the <see cref="Input"/> event.
+        /// </summary>
+        internal static void RaiseInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput, InputMode rawInputMode)
         {
-            add { RawInputMessageFilter.Input += value; }
-            remove { RawInputMessageFilter.Input -= value; }
+            if (Input is null)
+                return;
+
+            var eventArgs = new HidInputEventArgs(in rawInput, rawInputMode);
+            Input(device, hWnd, in eventArgs);
         }
 
         /// <summary>
@@ -112,10 +160,16 @@ namespace Blaze.Framework.RawInput
         ///   If the change is an arrival of a new device attached to the system, you can get information
         ///   about the device from <see cref="Devices"/>.
         /// </remarks>
-        public static event DeviceChangedEventHandler DeviceChanged
+        public static event DeviceChangedEventHandler DeviceChanged;
+
+        /// <summary>
+        ///   Raises the <see cref="DeviceChanged"/> event.
+        /// </summary>
+        internal static void RaiseDeviceChanged(IntPtr deviceHandle, DeviceChange deviceChange)
         {
-            add { RawInputMessageFilter.DeviceChanged += value; }
-            remove { RawInputMessageFilter.DeviceChanged -= value; }
+            Devices.NotifyDeviceChanged(deviceHandle, deviceChange);
+
+            DeviceChanged?.Invoke(deviceHandle, deviceChange);
         }
 
         #endregion

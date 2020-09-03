@@ -40,8 +40,7 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Gets the input mode of the event.
         /// </summary>
-        public readonly InputMode InputMode => RawInput.GetRawInputCode(inputMode);
-        private readonly IntPtr inputMode;
+        public readonly InputMode InputMode { get; }
 
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace Blaze.Framework.RawInput
         /// </summary>
         /// <param name="rawInput">The raw input data.</param>
         /// <param name="rawInputMode">The input mode as specified in <see cref="Message.WParam"/></param>
-        internal HidInputEventArgs(in RawInputData rawInput, IntPtr rawInputMode)
+        internal HidInputEventArgs(in RawInputData rawInput, InputMode rawInputMode)
         {
             Count = rawInput.Data.Hid.Count;
             DataSize = rawInput.Data.Hid.SizeHid;
@@ -59,7 +58,7 @@ namespace Blaze.Framework.RawInput
 
             RawData = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in rawInput.Data.Hid.RawData), rawDataLength);
 
-            inputMode = rawInputMode;
+            InputMode = rawInputMode;
         }
     }
 }

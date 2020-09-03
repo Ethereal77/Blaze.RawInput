@@ -20,7 +20,6 @@ namespace Blaze.Framework.RawInput
     public readonly ref struct MouseInputEventArgs
     {
         private readonly RawMouse mouseInput;
-        private readonly IntPtr inputMode;
 
         /// <summary>
         ///   Gets the mode of the mouse.
@@ -60,7 +59,7 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Gets the input mode of the event.
         /// </summary>
-        public readonly InputMode InputMode => RawInput.GetRawInputCode(inputMode);
+        public readonly InputMode InputMode { get; }
 
 
         /// <summary>
@@ -68,10 +67,10 @@ namespace Blaze.Framework.RawInput
         /// </summary>
         /// <param name="rawInput">The raw input data.</param>
         /// <param name="rawInputMode">The input mode as specified in <see cref="Message.WParam"/></param>
-        internal MouseInputEventArgs(in RawInputData rawInput, IntPtr rawInputMode)
+        internal MouseInputEventArgs(in RawInputData rawInput, InputMode rawInputMode)
         {
             mouseInput = rawInput.Data.Mouse;
-            inputMode = rawInputMode;
+            InputMode = rawInputMode;
         }
     }
 }

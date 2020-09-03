@@ -47,39 +47,7 @@ namespace Blaze.Framework.RawInput
             Span<byte> inputData = stackalloc byte[(int) dataLength];
             ref RawInputData rawInput = ref GetRawInputData(ptrRawInputMessage, inputData);
 
-            var device = rawInput.Header.Device;
-            switch (rawInput.Header.Type)
-            {
-                case DeviceType.Mouse:
-                    {
-                        if (MouseInput is null)
-                            break;
-
-                        var eventArgs = new MouseInputEventArgs(in rawInput, rawInputMode);
-                        MouseInput(device, hWnd, in eventArgs);
-                        break;
-                    }
-
-                case DeviceType.Keyboard:
-                    {
-                        if (KeyboardInput is null)
-                            break;
-
-                        var eventArgs = new KeyboardInputEventArgs(in rawInput, rawInputMode);
-                        KeyboardInput(device, hWnd, in eventArgs);
-                        break;
-                    }
-
-                case DeviceType.HumanInputDevice:
-                    {
-                        if (Input is null)
-                            break;
-
-                        var eventArgs = new HidInputEventArgs(in rawInput, rawInputMode);
-                        Input(device, hWnd, in eventArgs);
-                        break;
-                    }
-            }
+            HandleRawInput(in rawInput, GetRawInputCode(rawInputMode), hWnd);
         }
 
         /// <summary>
@@ -89,35 +57,7 @@ namespace Blaze.Framework.RawInput
         /// <param name="deviceChange">A value indicating the change.</param>
         private static void HandleDeviceChange(IntPtr deviceHandle, IntPtr deviceChange)
         {
-            var change = (DeviceChange) deviceChange;
-
-            Devices.NotifyDeviceChanged(deviceHandle, change);
-
-            DeviceChanged?.Invoke(deviceHandle, change);
+            RaiseDeviceChanged(deviceHandle, (DeviceChange) deviceChange);
         }
-
-        #region Events
-
-        /// <summary>
-        ///   Occurs when a keyboard input event is received.
-        /// </summary>
-        internal static event KeyboardInputEventHandler KeyboardInput;
-
-        /// <summary>
-        ///   Occurs when a mouse input event is received.
-        /// </summary>
-        internal static event MouseInputEventHandler MouseInput;
-
-        /// <summary>
-        ///   Occurs when a raw input event is received.
-        /// </summary>
-        internal static event RawInputEventHandler Input;
-
-        /// <summary>
-        ///   Occurs when a raw input device has been added to or removed from the system.
-        /// </summary>
-        internal static event DeviceChangedEventHandler DeviceChanged;
-
-        #endregion
     }
 }
