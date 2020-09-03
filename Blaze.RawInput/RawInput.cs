@@ -1,6 +1,7 @@
 ﻿// Copyright © 2020 Infinisis
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 using Blaze.Interop.Win32;
@@ -64,6 +65,56 @@ namespace Blaze.Framework.RawInput
                 Application.AddMessageFilter(rawInputMessageFilter);
             else
                 MessageFilterHook.AddMessageFilter(targetHwnd, rawInputMessageFilter);
+        }
+
+        #endregion
+
+        #region Get Buffered RawInput Data
+
+        /// <summary>
+        ///   Processes the raw input messages received by the application.
+        /// </summary>
+        /// <remarks>
+        ///   Call this function to process the queued raw input readings of the registered devices.
+        ///   <para/>
+        ///   Using this function, the raw input data is buffered and processed in bulk. In contrast, you can use message processing
+        ///   by specifying <see cref="RegisterDeviceOptions.Default"/> or <see cref="RegisterDeviceOptions.CustomFiltering"/> when
+        ///   calling <see cref="RegisterDevice(UsagePage, UsageId, DeviceFlags, IntPtr, RegisterDeviceOptions)"/> to enable a filter
+        ///   that processes the messages received by the application.
+        ///   <para/>
+        ///   This way is more convenient for reading raw input data from devices generating a large amount of data.
+        /// </remarks>
+        public static void ProcessMessages()
+        {
+            // Get the approx. size of a RawInput struct (including extra data for HIDs)
+            var bufferSize = (int) GetRawInputBufferSize();
+            if (bufferSize == 0)
+                return;
+
+            Span<byte> buffer = stackalloc byte[bufferSize * 16];
+
+            // While we keep reading messages, fill the buffer and process them one by one
+            while (true)
+            {
+                var result = GetRawInputBuffer(buffer);
+                if (result.Failure)
+                    throw new RawInputException(result);
+
+                var eventCount = (int) result;
+                if (eventCount == 0)
+                    break;
+
+                ref RawInputData rawInput = ref Unsafe.As<byte, RawInputData>(ref buffer[0]);
+
+                for (int index = 0; index < eventCount; index++)
+                {
+                    HandleRawInput(in rawInput);
+
+                    rawInput = ref NextRawInputBlock(in rawInput);
+
+                    //DefRawInputProc(in rawInput, eventCount, Unsafe.SizeOf(RawInputHeader));
+                }
+            }
         }
 
         #endregion

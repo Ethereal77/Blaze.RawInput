@@ -91,43 +91,102 @@ namespace Blaze.Framework.RawInput
         // == Get RawInput Data (Buffered) ========================================================================= //
 
         /// <summary>
-        ///   Performs a buffered read of the raw input data.
+        ///   Queries the minimum size of the buffer of <see cref="RawInputData"/> structures, including any extra
+        ///   data needed for HID devices.
         /// </summary>
-        /// <param name="dataBuffer">
-        ///   A reference to a buffer of <see cref="RawInputData"/> structures that contain the raw input data. If <c>null</c>, the
-        ///   minimum required buffer, in bytes, is returned in <paramref name="dataSize"/>.
-        /// </param>
-        /// <param name="dataSize">The size of a <see cref="RawInputData"/> structure, in bytes.</param>
-        /// <param name="dataHeaderSize">The size of the <see cref="RawInputData.RawInputHeader" /> structure, in bytes.</param>
         /// <returns>
-        ///   If <paramref name="dataBuffer"/> is <c>null</c> and the function is successful, the return value is zero.
-        ///   If it is not <c>null</c> and the function is successful, the return value is the number of <see cref="RawInputData"/>
-        ///   structures written.
-        ///   If an error occurs, the return value is -1.
+        ///   Minimum required buffer size, in bytes.
         /// </returns>
         /// <remarks>
-        ///   Using this function, the raw input data is buffered in the array of <see cref="RawInputData"/> structures.
-        ///   The NEXTRAWINPUTBLOCK macro allows an application to traverse an array of <see cref="RawInputData"/> structures.
+        ///   Using this function to size the buffer for reading raw input data with <see cref="GetRawInputBuffer"/>.
+        ///   A good buffer size might be 8x or 16x the size returned by this function.
         /// </remarks>
-        /// <unmanaged>unsigned int GetRawInputBuffer([Out, Buffer, Optional] RAWINPUT* pData,[InOut] unsigned int* pcbSize,[In] unsigned int cbSizeHeader)</unmanaged>
-        internal static unsafe int GetRawInputBuffer(RawInputData[] dataBuffer, ref uint dataSize, uint dataHeaderSize)
+        internal static unsafe uint GetRawInputBufferSize()
         {
-            int result;
-            var nativeArray = dataBuffer is null ? null : new RawInputData[dataBuffer.Length];
-
-            fixed (uint* ptrDataSize = &dataSize)
-            fixed (RawInputData* ptrNativeArray = nativeArray)
-                result = GetRawInputBuffer_(ptrNativeArray, ptrDataSize, dataHeaderSize);
-
-            if (dataBuffer != null)
-            {
-                for (int index = 0; index < dataBuffer.Length; ++index)
-                    dataBuffer[index] = nativeArray[index];
-            }
-            return result;
+            uint dataSize;
+            GetRawInputBuffer_(null, &dataSize, RawInputHeader.HeaderSize);
+            return dataSize;
         }
 
-        [DllImport("user32.dll", EntryPoint = "GetRawInputBuffer", CallingConvention = CallingConvention.StdCall)]
+        /// <summary>
+        ///   Performs a buffered read of the raw input data.
+        /// </summary>
+        /// <param name="rawInputDataBuffer">A buffer to contain the raw input data.</param>
+        /// <returns>
+        ///   A <see cref="Result"/> code:
+        ///   <list type="bullet">
+        ///     <item>
+        ///       If <paramref name="rawInputDataBuffer"/> is empty and the function is successful, the return value is <see cref="Result.Ok"/>.
+        ///     </item>
+        ///     <item>
+        ///       If it is not empty and the function is successful, the return value is the number of <see cref="RawInputData"/> structures
+        ///       written to the buffer.
+        ///     </item>
+        ///     <item>If an error occurs, the return value is the Win32 error code.</item>
+        ///   </list>
+        /// </returns>
+        /// <remarks>
+        ///   Using this function, the raw input data is buffered in the buffer of <see cref="RawInputData"/> structures.
+        ///   The <see cref="NextRawInputBlock(in RawInputData)"/> function allows an application to traverse the array
+        ///   of <see cref="RawInputData"/> structures.
+        /// </remarks>
+        internal static unsafe Result GetRawInputBuffer(Span<byte> rawInputDataBuffer)
+        {
+            var rawInputSize = (uint) rawInputDataBuffer.Length;
+
+            int result;
+            fixed (byte* ptrDataBuffer = &rawInputDataBuffer[0])
+                result = GetRawInputBuffer_(ptrDataBuffer, &rawInputSize, RawInputHeader.HeaderSize);
+
+            return result >= 0 ? result : Result.FromWin32Error(Marshal.GetLastWin32Error());
+        }
+
+        /// <summary>
+        ///   Returns the provided pointer aligned to the word size of the current process architecture
+        ///   (x86 or AMD64).
+        /// </summary>
+        /// <param name="ptr">The pointer to align.</param>
+        /// <returns>The aligned pointer.</returns>
+        /// <unmanaged>RAWINPUT_ALIGN(x)</unmanaged>
+        private static unsafe byte* RawInputAlign(byte* ptr)
+        {
+            if(Environment.Is64BitProcess)
+            {
+                // #define RAWINPUT_ALIGN(x)   (((x) + sizeof(QWORD) - 1) & ~(sizeof(QWORD) - 1))
+                return (byte*) (((long) (ptr + sizeof(long) - 1)) & ~(sizeof(long) - 1));
+            }
+            else
+            {
+                // #define RAWINPUT_ALIGN(x)   (((x) + sizeof(DWORD) - 1) & ~(sizeof(DWORD) - 1))
+                return (byte*) (((int) (ptr + sizeof(int) - 1)) & ~(sizeof(int) - 1));
+            }
+        }
+
+        /// <summary>
+        ///   Retrieves the location of the next structure in an array of <see cref="RawInputData"/> structures.
+        /// </summary>
+        /// <param name="ptr">A pointer to a structure in an array of <see cref="RawInputData"/> structures.</param>
+        /// <unmanaged>NEXTRAWINPUTBLOCK(ptr)</unmanaged>
+        internal static unsafe RawInputData* NextRawInputBlock(RawInputData* ptr)
+        {
+            // ((PRAWINPUT)RAWINPUT_ALIGN((ULONG_PTR)((PBYTE)(ptr) + (ptr)->header.dwSize)))
+            return (RawInputData*) RawInputAlign((byte*)ptr + ptr->Header.Size);
+        }
+
+        /// <summary>
+        ///   Retrieves the location of the next structure in an array of <see cref="RawInputData"/> structures.
+        /// </summary>
+        /// <param name="rawInput">A reference to a structure in an array of <see cref="RawInputData"/> structures.</param>
+        /// <unmanaged>NEXTRAWINPUTBLOCK(ptr)</unmanaged>
+        internal static unsafe ref RawInputData NextRawInputBlock(in RawInputData rawInput)
+        {
+            var dataPtr = (RawInputData*) Unsafe.AsPointer(ref Unsafe.AsRef(in rawInput));
+            dataPtr = NextRawInputBlock(dataPtr);
+            return ref Unsafe.AsRef<RawInputData>(dataPtr);
+        }
+
+        /// <unmanaged>unsigned int GetRawInputBuffer([Out, Buffer, Optional] RAWINPUT* pData,[InOut] unsigned int* pcbSize,[In] unsigned int cbSizeHeader)</unmanaged>
+        [DllImport("user32.dll", EntryPoint = "GetRawInputBuffer", SetLastError = true, PreserveSig = true, CallingConvention = CallingConvention.StdCall)]
         private static extern unsafe int GetRawInputBuffer_(void* pData, uint* pcbSize, uint cbSizeHeader);
 
 
