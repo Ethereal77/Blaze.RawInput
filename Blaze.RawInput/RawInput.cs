@@ -125,22 +125,21 @@ namespace Blaze.Framework.RawInput
         ///   Processes a <see cref="RawInputData"/> structure and dispatches the corresponding events.
         /// </summary>
         /// <param name="rawInput">Reference to the <see cref="RawInputData"/> structure.</param>
-        /// <param name="rawInputMode">Input mode of the received message.</param>
         /// <param name="windowHandle">Handle of the window receiving the message.</param>
-        internal static void HandleRawInput(in RawInputData rawInput, InputMode rawInputMode = InputMode.Input, IntPtr windowHandle = default)
+        internal static void HandleRawInput(in RawInputData rawInput, IntPtr windowHandle = default)
         {
             switch (rawInput.Header.Type)
             {
                 case DeviceType.Mouse:
-                    RaiseMouseInput(rawInput.Header.Device, windowHandle, in rawInput, rawInputMode);
+                    RaiseMouseInput(rawInput.Header.Device, windowHandle, in rawInput);
                     break;
 
                 case DeviceType.Keyboard:
-                    RaiseKeyboardInput(rawInput.Header.Device, windowHandle, in rawInput, rawInputMode);
+                    RaiseKeyboardInput(rawInput.Header.Device, windowHandle, in rawInput);
                     break;
 
                 case DeviceType.HumanInputDevice:
-                    RaiseInput(rawInput.Header.Device, windowHandle, in rawInput, rawInputMode);
+                    RaiseInput(rawInput.Header.Device, windowHandle, in rawInput);
                     break;
             }
         }
@@ -153,12 +152,12 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Raises the <see cref="KeyboardInput"/> event.
         /// </summary>
-        internal static void RaiseKeyboardInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput, InputMode rawInputMode)
+        internal static void RaiseKeyboardInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput)
         {
             if (KeyboardInput is null)
                 return;
 
-            var eventArgs = new KeyboardInputEventArgs(in rawInput, rawInputMode);
+            var eventArgs = new KeyboardInputEventArgs(in rawInput);
             KeyboardInput(device, hWnd, in eventArgs);
         }
 
@@ -170,12 +169,12 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Raises the <see cref="MouseInput"/> event.
         /// </summary>
-        internal static void RaiseMouseInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput, InputMode rawInputMode)
+        internal static void RaiseMouseInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput)
         {
             if (MouseInput is null)
                 return;
 
-            var eventArgs = new MouseInputEventArgs(in rawInput, rawInputMode);
+            var eventArgs = new MouseInputEventArgs(in rawInput);
             MouseInput(device, hWnd, in eventArgs);
         }
 
@@ -194,12 +193,12 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Raises the <see cref="Input"/> event.
         /// </summary>
-        internal static void RaiseInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput, InputMode rawInputMode)
+        internal static void RaiseInput(IntPtr device, IntPtr hWnd, in RawInputData rawInput)
         {
             if (Input is null)
                 return;
 
-            var eventArgs = new HidInputEventArgs(in rawInput, rawInputMode);
+            var eventArgs = new HidInputEventArgs(in rawInput);
             Input(device, hWnd, in eventArgs);
         }
 

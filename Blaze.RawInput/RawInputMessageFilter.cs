@@ -18,7 +18,7 @@ namespace Blaze.Framework.RawInput
         public virtual bool PreFilterMessage(ref Message message)
         {
             if (message.Msg == WM_INPUT)
-                HandleInput(message.HWnd, message.LParam, message.WParam);
+                HandleInput(message.HWnd, message.LParam);
 
             else if (message.Msg == WM_INPUT_DEVICE_CHANGE)
                 HandleDeviceChange(message.LParam, message.WParam);
@@ -29,16 +29,12 @@ namespace Blaze.Framework.RawInput
         /// <summary>
         ///   Handles a RawInput message.
         /// </summary>
-        /// <param name="hWnd">The handle of the window that received the RawInput message.</param>
+        /// <param name="windowHandle">The handle of the window that received the RawInput message.</param>
         /// <param name="ptrRawInputMessage">A pointer to a RawInput message.</param>
-        /// <param name="rawInputMode">
-        ///   A value indicating whether the input message is from the regular message flow or
-        ///   if the message is for a input sink. Use <see cref="GetRawInputCode"/> to know which one.
-        /// </param>
         /// <remarks>
         ///   This method can be used directly when handling RawInput messages from non-WinForms application.
         /// </remarks>
-        private static void HandleInput(IntPtr hWnd, IntPtr ptrRawInputMessage, IntPtr rawInputMode)
+        private static void HandleInput(IntPtr windowHandle, IntPtr ptrRawInputMessage)
         {
             uint dataLength = GetRawInputDataSize(ptrRawInputMessage);
             if (dataLength == 0)
@@ -47,7 +43,7 @@ namespace Blaze.Framework.RawInput
             Span<byte> inputData = stackalloc byte[(int) dataLength];
             ref RawInputData rawInput = ref GetRawInputData(ptrRawInputMessage, inputData);
 
-            HandleRawInput(in rawInput, GetRawInputCode(rawInputMode), hWnd);
+            HandleRawInput(in rawInput, windowHandle);
         }
 
         /// <summary>

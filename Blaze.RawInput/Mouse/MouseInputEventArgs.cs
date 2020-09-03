@@ -1,7 +1,6 @@
 ﻿// Copyright © 2020 Infinisis
 
 using System;
-using System.Windows.Forms;
 
 namespace Blaze.Framework.RawInput
 {
@@ -66,11 +65,11 @@ namespace Blaze.Framework.RawInput
         ///   Initializes a new instance of the <see cref="MouseInputEventArgs" /> class.
         /// </summary>
         /// <param name="rawInput">The raw input data.</param>
-        /// <param name="rawInputMode">The input mode as specified in <see cref="Message.WParam"/></param>
-        internal MouseInputEventArgs(in RawInputData rawInput, InputMode rawInputMode)
+        internal MouseInputEventArgs(in RawInputData rawInput)
         {
             mouseInput = rawInput.Data.Mouse;
-            InputMode = rawInputMode;
+
+            InputMode = RawInput.GetRawInputCode(rawInput.Header.WParam);
         }
     }
 }

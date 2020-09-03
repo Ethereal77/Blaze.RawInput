@@ -4,7 +4,6 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 namespace Blaze.Framework.RawInput
 {
@@ -47,8 +46,7 @@ namespace Blaze.Framework.RawInput
         ///   Initializes a new instance of the <see cref="HidInputEventArgs" /> structure.
         /// </summary>
         /// <param name="rawInput">The raw input data.</param>
-        /// <param name="rawInputMode">The input mode as specified in <see cref="Message.WParam"/></param>
-        internal HidInputEventArgs(in RawInputData rawInput, InputMode rawInputMode)
+        internal HidInputEventArgs(in RawInputData rawInput)
         {
             Count = rawInput.Data.Hid.Count;
             DataSize = rawInput.Data.Hid.SizeHid;
@@ -58,7 +56,7 @@ namespace Blaze.Framework.RawInput
 
             RawData = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in rawInput.Data.Hid.RawData), rawDataLength);
 
-            InputMode = rawInputMode;
+            InputMode = RawInput.GetRawInputCode(rawInput.Header.WParam);
         }
     }
 }

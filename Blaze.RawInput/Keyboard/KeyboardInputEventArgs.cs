@@ -56,11 +56,11 @@ namespace Blaze.Framework.RawInput
         ///   Initializes a new instance of the <see cref="KeyboardInputEventArgs" /> structure.
         /// </summary>
         /// <param name="rawInput">The raw input data.</param>
-        /// <param name="rawInputMode">The input mode as specified in <see cref="Message.WParam"/></param>
-        internal KeyboardInputEventArgs(in RawInputData rawInput, InputMode rawInputMode)
+        internal KeyboardInputEventArgs(in RawInputData rawInput)
         {
             keyboardInput = rawInput.Data.Keyboard;
-            InputMode = rawInputMode;
+
+            InputMode = RawInput.GetRawInputCode(rawInput.Header.WParam);
         }
     }
 }
