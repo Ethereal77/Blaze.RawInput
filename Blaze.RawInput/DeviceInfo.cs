@@ -54,7 +54,7 @@ namespace Blaze.Framework.RawInput
                 DeviceType.Keyboard => new KeyboardInfo(in rawDeviceInfo, deviceName, deviceHandle),
                 DeviceType.HumanInputDevice => new HidInfo(in rawDeviceInfo, deviceName, deviceHandle),
 
-                _ => throw new InvalidOperationException($"Unsupported Device Type [{(int)rawDeviceInfo.Type}]."),
+                _ => throw new RawInputException($"Unsupported Device Type [{(int) rawDeviceInfo.Type}].")
             };
     }
 }

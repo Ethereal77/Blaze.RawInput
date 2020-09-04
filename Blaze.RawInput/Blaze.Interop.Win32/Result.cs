@@ -15,19 +15,19 @@ namespace Blaze.Interop.Win32
         ///   Gets the result code.
         /// </summary>
         /// <value>The result code (HRESULT).</value>
-        public int Code { get; }
+        public readonly int Code { get; }
 
         /// <summary>
         ///   Gets a value indicating whether this <see cref="Result"/> represents a success.
         /// </summary>
         /// <value><c>true</c> if the result is a success; otherwise, <c>false</c>.</value>
-        public bool Success => Code >= 0;
+        public readonly bool Success => Code >= 0;
 
         /// <summary>
         ///   Gets a value indicating whether this <see cref="Result"/> represents a failure.
         /// </summary>
         /// <value><c>true</c> if the result is a failure; otherwise, <c>false</c>.</value>
-        public bool Failure => Code < 0;
+        public readonly bool Failure => Code < 0;
 
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Blaze.Interop.Win32
         /// <returns>
         ///   <c>true</c> if the specified <see cref="Result"/> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
-        public bool Equals(Result other) => (Code == other.Code);
+        public readonly bool Equals(Result other) => (Code == other.Code);
 
         /// <summary>
         ///   Determines whether the specified <see cref="object"/> is equal to this instance.
@@ -94,7 +94,7 @@ namespace Blaze.Interop.Win32
         /// <returns>
         ///   <c>true</c> if the specified <see cref="object"/> is equal to this instance; otherwise, <c>false</c>.
         /// </returns>
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object obj)
         {
             if (obj is Result result)
                 return Equals(result);
@@ -108,7 +108,7 @@ namespace Blaze.Interop.Win32
         /// <returns>
         ///   A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.
         /// </returns>
-        public override int GetHashCode() => Code;
+        public readonly override int GetHashCode() => Code;
 
         public static bool operator ==(Result left, Result right) => left.Code == right.Code;
 
@@ -118,7 +118,7 @@ namespace Blaze.Interop.Win32
         ///   Returns a <see cref="string"/> that represents this instance.
         /// </summary>
         /// <returns>A <see cref="string"/> that represents this instance.</returns>
-        public override string ToString() => $"HRESULT = 0x{Code:X}";
+        public readonly override string ToString() => $"Result = 0x{Code:X}";
 
 
         /// <summary>
@@ -126,12 +126,12 @@ namespace Blaze.Interop.Win32
         /// </summary>
         /// <param name="ex">The exception.</param>
         /// <returns>The associated result code.</returns>
-        public static Result FromException(Exception ex) => new Result(Marshal.GetHRForException(ex));
+        public static Result FromException(Exception ex) => new Result(ex.HResult);
 
         /// <summary>
         ///   Gets a <see cref="Result"/> from a Win32 error code.
         /// </summary>
-        /// <param name="errorCode">The Win32 error code.</param>
+        /// <param name="errorCode">The Win32 error code. This code can be obtained from <see cref="Marshal.GetLastWin32Error"/></param>
         /// <returns>The associated result code.</returns>
         public static Result FromWin32Error(int errorCode)
         {
@@ -148,72 +148,90 @@ namespace Blaze.Interop.Win32
         ///   Represents a result code of a successful operation.
         /// </summary>
         /// <unmanaged>S_OK</unmanaged>
-        public static Result Ok = new Result(unchecked(0x00000000));
+        public static readonly Result Ok = new Result(0x00000000u);
 
         /// <summary>
         ///   Represents a result code indicating the boolean value <c>false</c>.
         /// </summary>
-        public static Result False = new Result(unchecked(0x00000001));
+        public static readonly Result False = new Result(0x00000001u);
 
         /// <summary>
-        ///   Represents a result code of an aborted operation.
+        ///   Represents a result code indicating an aborted operation.
         /// </summary>
         /// <unmanaged>E_ABORT</unmanaged>
-        public static Result Abort = new Result(unchecked(0x80004004u));
+        public static readonly ResultDescriptor Abort = new ResultDescriptor(0x80004004u, "General", "E_ABORT", "Operation aborted");
 
         /// <summary>
-        ///   Represents a result code of a general access denied error.
+        ///   Represents a result code indicating a general access denied error.
         /// </summary>
         /// <unmanaged>E_ACCESSDENIED</unmanaged>
-        public static Result AccessDenied = new Result(unchecked(0x80070005u));
+        public static readonly ResultDescriptor AccessDenied = new ResultDescriptor(0x80070005u, "General", "E_ACCESSDENIED", "General access denied error");
 
         /// <summary>
-        ///   Represents a result code of an unspecified failure.
+        ///   Represents a result code indicating an unspecified failure.
         /// </summary>
         /// <unmanaged>E_FAIL</unmanaged>
-        public static Result Fail = new Result(unchecked(0x80004005u));
+        public static readonly ResultDescriptor Fail = new ResultDescriptor(0x80004005u, "General", "E_FAIL", "Unspecified error");
 
         /// <summary>
-        ///   Represents a result code of an invalid handle.
+        ///   Represents a result code indicating an invalid handle.
         /// </summary>
         /// <unmanaged>E_HANDLE</unmanaged>
-        public static Result InvalidHandle = new Result(unchecked(0x80070006u));
+        public static readonly ResultDescriptor InvalidHandle = new ResultDescriptor(0x80070006u, "General", "E_HANDLE", "Invalid handle");
 
         /// <summary>
-        ///   Represents a result code of an invalid argument.
+        ///   Represents a result code indicating an invalid argument.
         /// </summary>
         /// <unmanaged>E_INVALIDARG</unmanaged>
-        public static Result InvalidArgument = new Result(unchecked(0x80070057u));
+        public static readonly ResultDescriptor InvalidArgument = new ResultDescriptor(0x80070057u, "General", "E_INVALIDARG", "Invalid arguments");
 
         /// <summary>
-        ///   Represents a result code of an unsupported interface.
+        ///   Represents a result code indicating an unsupported interface.
         /// </summary>
         /// <unmanaged>E_NOINTERFACE</unmanaged>
-        public static Result InterfaceNotSupported = new Result(unchecked(0x80004002u));
+        public static readonly ResultDescriptor InterfaceNotSupported = new ResultDescriptor(0x80004002u, "General", "E_NOINTERFACE", "No such interface supported");
 
         /// <summary>
         ///   Represents a result code of a not implemented operation.
         /// </summary>
         /// <unmanaged>E_NOTIMPL</unmanaged>
-        public static Result NotImplemented = new Result(unchecked(0x80004001u));
+        public static readonly ResultDescriptor NotImplemented = new ResultDescriptor(0x80004001u, "General", "E_NOTIMPL", "Not implemented");
 
         /// <summary>
-        ///   Represents a result code of a failure to allocate necessary memory.
+        ///   Represents a result code indicating a failure to allocate necessary memory.
         /// </summary>
         /// <unmanaged>E_OUTOFMEMORY</unmanaged>
-        public static Result OutOfMemory = new Result(unchecked(0x8007000Eu));
+        public static readonly ResultDescriptor OutOfMemory = new ResultDescriptor(0x8007000Eu, "General", "E_OUTOFMEMORY", "Out of memory");
 
         /// <summary>
-        ///   Represents a result code of a pointer that is not valid.
+        ///   Represents a result code indicating that a pointer is not valid.
         /// </summary>
         /// <unmanaged>E_POINTER</unmanaged>
-        public static Result InvalidPointer = new Result(unchecked(0x80004003u));
+        public static readonly ResultDescriptor InvalidPointer = new ResultDescriptor(0x80004003u, "General", "E_POINTER", "Invalid pointer");
 
         /// <summary>
-        ///   Represents a result code of an unexpected failure.
+        ///   Represents a result code indicating an unexpected failure.
         /// </summary>
         /// <unmanaged>E_UNEXPECTED</unmanaged>
-        public static Result UnexpectedFailure = new Result(unchecked(0x8000FFFFu));
+        public static readonly ResultDescriptor UnexpectedFailure = new ResultDescriptor(0x8000FFFFu, "General", "E_UNEXPECTED", "Catastrophic failure");
+
+        /// <summary>
+        ///   Represents a result code indicating that the data necessary to complete an operation is not yet available.
+        /// </summary>
+        /// <unmanaged>E_PENDING</unmanaged>
+        public static readonly ResultDescriptor Pending = new ResultDescriptor(0x8000000Au, "General", "E_PENDING", "Data not yet available");
+
+        /// <summary>
+        ///   Represents a result code indicating that a wait operation on a resource was abandonned.
+        /// </summary>
+        /// <unmanaged>WAIT_ABANDONED</unmanaged>
+        public static readonly ResultDescriptor WaitAbandoned = new ResultDescriptor(0x00000080u, "General", "WAIT_ABANDONED", "Wait abandoned");
+
+        /// <summary>
+        ///   Represents a result code indicating the timeout of wait operation on a resource.
+        /// </summary>
+        /// <unmanaged>WAIT_TIMEOUT</unmanaged>
+        public static readonly ResultDescriptor WaitTimeout = new ResultDescriptor(0x00000102u, "General", "WAIT_TIMEOUT", "Wait timeout");
 
         #endregion
     }
