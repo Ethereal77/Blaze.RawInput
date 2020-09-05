@@ -19,5 +19,11 @@ namespace Blaze.Framework.RawInput
                 throw new RawInputException(Result.FromWin32Error(win32errorCode), Marshal.GetExceptionForHR(win32errorCode));
             }
         }
+
+        public static void CheckLastResult()
+        {
+            var win32errorCode = Marshal.GetLastWin32Error();
+            throw new RawInputException(Result.FromWin32Error(win32errorCode), Marshal.GetExceptionForHR(win32errorCode));
+        }
     }
 }

@@ -6,6 +6,8 @@ using System.Windows.Forms;
 
 using Blaze.Interop.Win32;
 
+using static Blaze.Framework.RawInput.ThrowHelper;
+
 namespace Blaze.Framework.RawInput
 {
     /// <summary>
@@ -55,7 +57,8 @@ namespace Blaze.Framework.RawInput
             rawInputDevice.Flags = flags;
             rawInputDevice.Target = targetHwnd;
 
-            RegisterRawInputDevice(rawInputDevice);
+            if(!RegisterRawInputDevice(rawInputDevice))
+                CheckLastResult();
 
             if (options == RegisterDeviceOptions.NoFiltering || rawInputMessageFilter != null)
                 return;
