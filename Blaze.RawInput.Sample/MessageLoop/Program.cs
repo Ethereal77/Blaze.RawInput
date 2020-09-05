@@ -30,7 +30,10 @@ namespace Blaze.Framework.RawInput.Sample
             RawInput.DeviceChanged += OnDeviceChanged;
 
             Console.WriteLine();
+
+            RawInput.StartProcessingMessages(form.Handle);
             Application.Run(form);
+            RawInput.StopProcessingMessages();
         }
 
         private static Form CreateWindow()

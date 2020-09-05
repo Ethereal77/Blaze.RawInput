@@ -48,46 +48,114 @@ namespace Blaze.Framework.RawInput
 
         #region Device Registration
 
-        private static RawInputMessageFilter rawInputMessageFilter;
-
         /// <summary>
-        ///   Registers the devices that supply the raw input data.
-        /// </summary>
-        /// <param name="usagePage">The usage page.</param>
-        /// <param name="usageId">The usage id.</param>
-        /// <param name="flags">The flags.</param>
-        public static void RegisterDevice(UsagePage usagePage, UsageId usageId, DeviceFlags flags) =>
-            RegisterDevice(usagePage, usageId, flags, targetHwnd: IntPtr.Zero);
-
-        /// <summary>
-        ///   Registers the devices that supply the raw input data.
+        ///   Registers a device that supplies the raw input data.
         /// </summary>
         /// <param name="usagePage">The usage page.</param>
         /// <param name="usageId">The usage id.</param>
         /// <param name="flags">A combination of flags specifying how to interpret the values of <paramref name="usageId"/> and <paramref name="usagePage"/>.</param>
-        /// <param name="targetHwnd">A handle to the target window.</param>
-        /// <param name="options">The options for registering the device.</param>
-        public static void RegisterDevice(UsagePage usagePage, UsageId usageId, DeviceFlags flags, IntPtr targetHwnd, RegisterDeviceOptions options = RegisterDeviceOptions.Default)
+        /// <param name="windowHandle">
+        ///   A handle to the target window. Specify <see cref="IntPtr.Zero"/> to not associate the device with a window. Instead the
+        ///   input data will follow the input focus. This is useful when specifying the flag <see cref="DeviceFlags.InputSink"/> or
+        ///   <see cref="DeviceFlags.ExclusiveInputSink"/>. The default value is <see cref="IntPtr.Zero"/>.
+        /// </param>
+        /// <remarks>
+        ///   To receive <c>WM_INPUT</c> messages (through the events <see cref="MouseInput"/>, <see cref="KeyboardInput"/>, and
+        ///   <see cref="Input"/>), an application must first register the raw input devices using <see cref="RegisterRawInputDevice"/>.
+        ///   By default, an application does not receive raw input.
+        ///   <para/>
+        ///   To receive <c>WM_INPUT_DEVICE_CHANGE</c> messages (through the <see cref="DeviceChanged"/> event), an application must
+        ///   specify <see cref="DeviceFlags.DeviceNotify"/> for each device class that is specified by the <see cref="UsagePage"/>
+        ///   and <see cref="UsageId"/> of the  <see cref="RawInputDevice" /> structure. By default, an application does not receive
+        ///   <c>WM_INPUT_DEVICE_CHANGE</c> notifications for raw input device arrival and removal.
+        ///   <para/>
+        ///   To unregister a device, specify <see cref="DeviceFlags.Remove"/>. This tells the operating system to stop reading
+        ///   from a device that matches the top level collection (specified through <paramref name="usagePage"/> and
+        ///   <paramref name="usageId"/>). Alternatively, use the <see cref="UnregisterDevice"/> method.
+        ///   <para/>
+        ///   If the <see cref="DeviceFlags.Remove"/> flag is set and <paramref name="windowHandle"/> is not set to
+        ///   <see cref="IntPtr.Zero"/>, then parameter validation will fail.
+        /// </remarks>
+        public static void RegisterDevice(UsagePage usagePage, UsageId usageId, DeviceFlags flags, IntPtr windowHandle = default)
         {
             RawInputDevice rawInputDevice;
             rawInputDevice.UsagePage = usagePage;
             rawInputDevice.UsageId = usageId;
             rawInputDevice.Flags = flags;
-            rawInputDevice.Target = targetHwnd;
+            rawInputDevice.Target = windowHandle;
 
             if(!RegisterRawInputDevice(rawInputDevice))
                 CheckLastResult();
 
             UpdateRegisteredDeviceList();
+        }
 
-            if (options == RegisterDeviceOptions.NoFiltering || rawInputMessageFilter != null)
+        /// <summary>
+        ///   Unregisters a device that supplies the raw input data.
+        /// </summary>
+        /// <param name="usagePage">The usage page.</param>
+        /// <param name="usageId">The usage id.</param>
+        /// <remarks>
+        ///   This function tells the operating system to stop reading from a device that matches the top level collection
+        ///   (specified through <paramref name="usagePage"/> and <paramref name="usageId"/>).
+        /// </remarks>
+        public static void UnregisterDevice(UsagePage usagePage, UsageId usageId) =>
+            RegisterDevice(usagePage, usageId, DeviceFlags.Remove);
+
+        #endregion
+
+        #region Get RawInput Data
+
+        private static IntPtr targetWindowHandle;
+        private static RawInputMessageFilter rawInputMessageFilter;
+
+        /// <summary>
+        ///   Starts processing the raw input messages received by the application.
+        /// </summary>
+        /// <param name="windowHandle">Handle to the target window that will receive the messages.</param>
+        /// <param name="options">The options for the processing and filtering of messages.</param>
+        /// <remarks>
+        ///   Call this function to start filtering and processing raw input messages through the message pump of a target window.
+        ///   <para/>
+        ///   Using this function, the raw input data is processed one message at a time. In contrast, you can use buffered processing
+        ///   by calling <see cref="ProcessMessages"/> to process the queued raw input messages in bulk.
+        ///   <para/>
+        ///   This function installs a <see cref="IMessageFilter"/> that intercepts and processes the raw input messages received by
+        ///   the application. See <see cref="MessageProcessingOptions"/> enumeration for more information.
+        /// </remarks>
+        public static void StartProcessingMessages(IntPtr windowHandle = default, MessageProcessingOptions options = MessageProcessingOptions.Default)
+        {
+            if (rawInputMessageFilter != null)
                 return;
 
+            targetWindowHandle = windowHandle;
             rawInputMessageFilter = new RawInputMessageFilter();
-            if (options == RegisterDeviceOptions.Default)
+
+            if (options == MessageProcessingOptions.Default)
                 Application.AddMessageFilter(rawInputMessageFilter);
             else
-                MessageFilterHook.AddMessageFilter(targetHwnd, rawInputMessageFilter);
+                MessageFilterHook.AddMessageFilter(windowHandle, rawInputMessageFilter);
+        }
+
+        /// <summary>
+        ///   Stops processing the raw input messages received by the application.
+        /// </summary>
+        /// <remarks>
+        ///   Call this function to stop filtering and processing raw input messages through the message pump of the target window as
+        ///   previously specified by a call to <see cref="StartProcessingMessages"/>.
+        ///   <para/>
+        ///   This function removes any <see cref="IMessageFilter"/> previosly installed.
+        /// </remarks>
+        public static void StopProcessingMessages()
+        {
+            if (rawInputMessageFilter is null)
+                return;
+
+            Application.RemoveMessageFilter(rawInputMessageFilter);
+            MessageFilterHook.RemoveMessageFilter(targetWindowHandle, rawInputMessageFilter);
+
+            rawInputMessageFilter = null;
+            targetWindowHandle = default;
         }
 
         #endregion
@@ -101,9 +169,8 @@ namespace Blaze.Framework.RawInput
         ///   Call this function to process the queued raw input readings of the registered devices.
         ///   <para/>
         ///   Using this function, the raw input data is buffered and processed in bulk. In contrast, you can use message processing
-        ///   by specifying <see cref="RegisterDeviceOptions.Default"/> or <see cref="RegisterDeviceOptions.CustomFiltering"/> when
-        ///   calling <see cref="RegisterDevice(UsagePage, UsageId, DeviceFlags, IntPtr, RegisterDeviceOptions)"/> to enable a filter
-        ///   that processes the messages received by the application.
+        ///   by calling <see cref="StartProcessingMessages"/> to enable a filter that processes the messages received by the
+        ///   application's message pump. You can stop this with <see cref="StopProcessingMessages"/>.
         ///   <para/>
         ///   This way is more convenient for reading raw input data from devices generating a large amount of data.
         /// </remarks>

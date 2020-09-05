@@ -8,7 +8,7 @@ namespace Blaze.Framework.RawInput
     ///   Defines a structure containing information about a registered raw input device.
     /// </summary>
     /// <remarks>
-    ///   Devices are registered with <see cref="RawInput.RegisterDevice(UsagePage, UsageId, DeviceFlags, IntPtr, RegisterDeviceOptions)"/>.
+    ///   Devices are registered with <see cref="RawInput.RegisterDevice"/>.
     /// </remarks>
     public readonly struct RegisteredDevice
     {

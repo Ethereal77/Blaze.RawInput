@@ -30,36 +30,36 @@ namespace Blaze.Interop.Win32
         /// <summary>
         ///   Initializes a new instance of the <see cref="MessageFilterHook" /> class.
         /// </summary>
-        /// <param name="hwnd">The handle of the window whose <c>WndProc</c> function has to be hooked.</param>
-        private MessageFilterHook(IntPtr hwnd)
+        /// <param name="windowHandle">The handle of the window whose <c>WndProc</c> function has to be hooked.</param>
+        private MessageFilterHook(IntPtr windowHandle)
         {
-            windowHandle = hwnd;
+            this.windowHandle = windowHandle;
 
-            defaultWndProc = Win32Native.GetWindowLong(hwnd, Win32Native.WindowLongType.WndProc);
+            defaultWndProc = Win32Native.GetWindowLong(windowHandle, Win32Native.WindowLongType.WndProc);
             newWndProc = new Win32Native.WndProc(WndProc);
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate((Delegate)this.newWndProc);
 
             currentFilters = new List<IMessageFilter>();
 
-            Win32Native.SetWindowLong(hwnd, Win32Native.WindowLongType.WndProc, this.newWndProcPtr);
+            Win32Native.SetWindowLong(windowHandle, Win32Native.WindowLongType.WndProc, this.newWndProcPtr);
         }
 
 
         /// <summary>
         ///   Adds a message filter to a window.
         /// </summary>
-        /// <param name="hwnd">The handle of the window.</param>
+        /// <param name="windowHandle">The handle of the window.</param>
         /// <param name="messageFilter">The message filter.</param>
-        public static void AddMessageFilter(IntPtr hwnd, IMessageFilter messageFilter)
+        public static void AddMessageFilter(IntPtr windowHandle, IMessageFilter messageFilter)
         {
             lock (g_RegisteredHooksByHwnd)
             {
-                hwnd = GetSafeWindowHandle(hwnd);
+                windowHandle = GetSafeWindowHandle(windowHandle);
 
-                if (!g_RegisteredHooksByHwnd.TryGetValue(hwnd, out MessageFilterHook messageFilterHook))
+                if (!g_RegisteredHooksByHwnd.TryGetValue(windowHandle, out MessageFilterHook messageFilterHook))
                 {
-                    messageFilterHook = new MessageFilterHook(hwnd);
-                    g_RegisteredHooksByHwnd.Add(hwnd, messageFilterHook);
+                    messageFilterHook = new MessageFilterHook(windowHandle);
+                    g_RegisteredHooksByHwnd.Add(windowHandle, messageFilterHook);
                 }
 
                 messageFilterHook.AddMessageMilter(messageFilter);
@@ -69,22 +69,22 @@ namespace Blaze.Interop.Win32
         /// <summary>
         ///   Removes a message filter associated with a window.
         /// </summary>
-        /// <param name="hwnd">The handle of the window.</param>
+        /// <param name="windowHandle">The handle of the window.</param>
         /// <param name="messageFilter">The message filter.</param>
-        public static void RemoveMessageFilter(IntPtr hwnd, IMessageFilter messageFilter)
+        public static void RemoveMessageFilter(IntPtr windowHandle, IMessageFilter messageFilter)
         {
             lock (g_RegisteredHooksByHwnd)
             {
-                hwnd = GetSafeWindowHandle(hwnd);
+                windowHandle = GetSafeWindowHandle(windowHandle);
 
-                if (!g_RegisteredHooksByHwnd.TryGetValue(hwnd, out MessageFilterHook messageFilterHook))
+                if (!g_RegisteredHooksByHwnd.TryGetValue(windowHandle, out MessageFilterHook messageFilterHook))
                     return;
 
                 messageFilterHook.RemoveMessageFilter(messageFilter);
                 if (!messageFilterHook.isDisposed)
                     return;
 
-                g_RegisteredHooksByHwnd.Remove(hwnd);
+                g_RegisteredHooksByHwnd.Remove(windowHandle);
                 messageFilterHook.RestoreWndProc();
             }
         }
@@ -146,10 +146,10 @@ namespace Blaze.Interop.Win32
             return Win32Native.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
         }
 
-        private static IntPtr GetSafeWindowHandle(IntPtr hwnd)
+        private static IntPtr GetSafeWindowHandle(IntPtr windowHandle)
         {
-            return (hwnd != IntPtr.Zero)
-                ? hwnd
+            return (windowHandle != IntPtr.Zero)
+                ? windowHandle
                 : Process.GetCurrentProcess().MainWindowHandle;
         }
     }

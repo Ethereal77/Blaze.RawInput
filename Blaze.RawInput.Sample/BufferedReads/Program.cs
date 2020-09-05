@@ -118,7 +118,7 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
             Console.ForegroundColor = fg;
 
             // We don't use message filtering as we'll be polling manually
-            RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericMouse, deviceFlags, windowHandle, RegisterDeviceOptions.NoFiltering);
+            RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericMouse, deviceFlags, windowHandle);
             RawInput.MouseInput += OnMouseInput;
         }
 
@@ -132,7 +132,7 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
             Console.ForegroundColor = fg;
 
             // We don't use message filtering as we'll be polling manually
-            RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericKeyboard, deviceFlags, windowHandle, RegisterDeviceOptions.NoFiltering);
+            RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericKeyboard, deviceFlags, windowHandle);
             RawInput.KeyboardInput += OnKeyboardInput;
         }
 
