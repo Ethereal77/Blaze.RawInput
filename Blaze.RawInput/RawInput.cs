@@ -90,7 +90,7 @@ namespace Blaze.Framework.RawInput
         public static void ProcessMessages()
         {
             // Get the approx. size of a RawInput struct (including extra data for HIDs)
-            var bufferSize = (int) GetRawInputBufferSize();
+            var bufferSize = GetRawInputBufferSize();
             if (bufferSize == 0)
                 return;
 

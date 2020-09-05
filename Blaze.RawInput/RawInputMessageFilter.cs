@@ -36,11 +36,11 @@ namespace Blaze.Framework.RawInput
         /// </remarks>
         private static void HandleInput(IntPtr windowHandle, IntPtr ptrRawInputMessage)
         {
-            uint dataLength = GetRawInputDataSize(ptrRawInputMessage);
+            int dataLength = GetRawInputDataSize(ptrRawInputMessage);
             if (dataLength == 0)
                 return;
 
-            Span<byte> inputData = stackalloc byte[(int) dataLength];
+            Span<byte> inputData = stackalloc byte[dataLength];
             ref RawInputData rawInput = ref GetRawInputData(ptrRawInputMessage, inputData);
 
             HandleRawInput(in rawInput, windowHandle);

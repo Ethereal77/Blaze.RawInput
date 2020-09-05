@@ -3,7 +3,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 using static Blaze.Framework.RawInput.RawInput;
 
@@ -31,15 +30,15 @@ namespace Blaze.Framework.RawInput
         private static Dictionary<IntPtr, DeviceInfo> GetAvailableDevices()
         {
             // Query the number of devices available for RawInput
-            uint numDevices = GetRawInputDeviceCount();
+            int numDevices = GetRawInputDeviceCount();
             if (numDevices == 0)
                 return new Dictionary<IntPtr, DeviceInfo>(0);
 
             // Query info about the devices
-            Span<RawInputDeviceList> rawInputDevices = stackalloc RawInputDeviceList[(int) numDevices];
+            Span<RawInputDeviceList> rawInputDevices = stackalloc RawInputDeviceList[numDevices];
             GetRawInputDeviceList(rawInputDevices);
 
-            var devices = new Dictionary<IntPtr, DeviceInfo>((int) numDevices);
+            var devices = new Dictionary<IntPtr, DeviceInfo>(numDevices);
             for (int index = 0; index < numDevices; ++index)
             {
                 IntPtr deviceHandle = rawInputDevices[index].Device;
@@ -59,8 +58,8 @@ namespace Blaze.Framework.RawInput
         {
             string deviceName = GetRawInputDeviceName(deviceHandle);
 
-            uint deviceInfoLength = GetRawInputDeviceInfoSize(deviceHandle);
-            Span<byte> deviceInfoData = stackalloc byte[(int) deviceInfoLength];
+            int deviceInfoLength = GetRawInputDeviceInfoSize(deviceHandle);
+            Span<byte> deviceInfoData = stackalloc byte[deviceInfoLength];
             ref RawDeviceInformation deviceInfo = ref GetRawInputDeviceInfo(deviceHandle, deviceInfoData);
 
             return DeviceInfo.Create(ref deviceInfo, deviceName, deviceHandle);

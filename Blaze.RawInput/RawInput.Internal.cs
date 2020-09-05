@@ -39,7 +39,7 @@ namespace Blaze.Framework.RawInput
         /// <returns>
         ///   The number of bytes of raw input data available for the specified device.
         /// </returns>
-        internal static unsafe uint GetRawInputDataSize(IntPtr rawInputDataHandle)
+        internal static unsafe int GetRawInputDataSize(IntPtr rawInputDataHandle)
         {
             uint dataSize;
             GetRawInputData_((void*) rawInputDataHandle,
@@ -47,7 +47,7 @@ namespace Blaze.Framework.RawInput
                              null,
                              &dataSize,
                              RawInputHeader.HeaderSize);
-            return dataSize;
+            return (int) dataSize;
         }
 
         /// <summary>
@@ -103,11 +103,11 @@ namespace Blaze.Framework.RawInput
         ///   Using this function to size the buffer for reading raw input data with <see cref="GetRawInputBuffer"/>.
         ///   A good buffer size might be 8x or 16x the size returned by this function.
         /// </remarks>
-        internal static unsafe uint GetRawInputBufferSize()
+        internal static unsafe int GetRawInputBufferSize()
         {
             uint dataSize;
             GetRawInputBuffer_(null, &dataSize, RawInputHeader.HeaderSize);
-            return dataSize;
+            return (int) dataSize;
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Blaze.Framework.RawInput
         ///   The <see cref="NextRawInputBlock(in RawInputData)"/> function allows an application to traverse the array
         ///   of <see cref="RawInputData"/> structures.
         /// </remarks>
-        internal static unsafe uint GetRawInputBuffer(Span<byte> rawInputDataBuffer)
+        internal static unsafe int GetRawInputBuffer(Span<byte> rawInputDataBuffer)
         {
             var rawInputSize = (uint) rawInputDataBuffer.Length;
 
@@ -130,7 +130,7 @@ namespace Blaze.Framework.RawInput
 
             CheckResult(result);
 
-            return (uint) result;
+            return result;
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace Blaze.Framework.RawInput
         ///   <see cref="GetRawInputDeviceList"/>.
         /// </param>
         /// <returns>The required size of the buffer to pass to <see cref="GetRawInputDeviceInfo"/>.</returns>
-        internal static unsafe uint GetRawInputDeviceInfoSize(IntPtr deviceHandle)
+        internal static unsafe int GetRawInputDeviceInfoSize(IntPtr deviceHandle)
         {
             uint deviceInfoSize;
             Result result = GetRawInputDeviceInfoW_((void*) deviceHandle,
@@ -235,7 +235,7 @@ namespace Blaze.Framework.RawInput
 
             CheckResult(result);
 
-            return deviceInfoSize;
+            return (int) deviceInfoSize;
         }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace Blaze.Framework.RawInput
         /// <remarks>
         ///   To receive raw input from a device, an application must register it by using <see cref="RegisterRawInputDevice"/>.
         /// </remarks>
-        internal static unsafe uint GetRegisteredRawInputDeviceCount()
+        internal static unsafe int GetRegisteredRawInputDeviceCount()
         {
             uint numDevices = 0;
 
@@ -325,7 +325,7 @@ namespace Blaze.Framework.RawInput
 
             CheckResult(result);
 
-            return numDevices;
+            return (int) numDevices;
         }
 
         /// <summary>
@@ -368,7 +368,7 @@ namespace Blaze.Framework.RawInput
         ///   To get more detailed information about the attached devices, call <see cref="GetRawInputDeviceInfo"/> using the
         ///   <see cref="RawInputDeviceList.Device"/>.
         /// </remarks>
-        internal static unsafe uint GetRawInputDeviceCount()
+        internal static unsafe int GetRawInputDeviceCount()
         {
             uint numDevices = 0;
 
@@ -376,7 +376,7 @@ namespace Blaze.Framework.RawInput
 
             CheckResult(result);
 
-            return numDevices;
+            return (int) numDevices;
         }
 
         /// <summary>
