@@ -75,7 +75,7 @@ namespace Blaze.Framework.RawInput
         ///   you can cast the value returned from this property to <see cref="KeyboardInfo"/>, <see cref="MouseInfo"/> or
         ///   <see cref="HidInfo"/>, respectively, to obtain more specific information about the device.
         /// </returns>
-        public DeviceInfo this[IntPtr deviceHandle] => devicesByHandle?[deviceHandle];
+        public DeviceInfo this[IntPtr deviceHandle] => devicesByHandle[deviceHandle];
 
         /// <summary>
         ///   Gets the number of available devices contained in the collection.

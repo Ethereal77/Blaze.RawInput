@@ -18,13 +18,31 @@ namespace Blaze.Framework.RawInput
     {
         #region Device Enumeration and Information
 
-        private static Lazy<DeviceInfoCollection> g_Devices =
+        private static readonly Lazy<DeviceInfoCollection> g_Devices =
             new Lazy<DeviceInfoCollection>(() => new DeviceInfoCollection(), isThreadSafe: true);
+
+        private static readonly Lazy<RegisteredDeviceCollection> g_RegisteredDevices =
+            new Lazy<RegisteredDeviceCollection>(() => new RegisteredDeviceCollection(), isThreadSafe: true);
 
         /// <summary>
         ///   Gets a collection of the available RawInput devices attached to the system.
         /// </summary>
         public static DeviceInfoCollection Devices => g_Devices.Value;
+
+        /// <summary>
+        ///   Gets a collection of the RawInput devices registered by the application.
+        /// </summary>
+        public static RegisteredDeviceCollection RegisteredDevices => g_RegisteredDevices.Value;
+
+
+        /// <summary>
+        ///   Updates the internal list of registered devices when a device is registered or removed.
+        /// </summary>
+        private static void UpdateRegisteredDeviceList()
+        {
+            if (g_RegisteredDevices.IsValueCreated)
+                g_RegisteredDevices.Value.Update();
+        }
 
         #endregion
 
@@ -59,6 +77,8 @@ namespace Blaze.Framework.RawInput
 
             if(!RegisterRawInputDevice(rawInputDevice))
                 CheckLastResult();
+
+            UpdateRegisteredDeviceList();
 
             if (options == RegisterDeviceOptions.NoFiltering || rawInputMessageFilter != null)
                 return;
