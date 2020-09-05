@@ -28,17 +28,17 @@ namespace Blaze.Framework.RawInput
         ///   Populates a dictionary of the available devices associated with their handle.
         /// </summary>
         /// <returns>A dictionary of <see cref="DeviceInfo"/> associated with its <see cref="DeviceInfo.Handle"/>.</returns>
-        private static unsafe Dictionary<IntPtr, DeviceInfo> GetAvailableDevices()
+        private static Dictionary<IntPtr, DeviceInfo> GetAvailableDevices()
         {
             // Query the number of devices available for RawInput
-            uint numDevices = 0;
-            GetRawInputDeviceList(null, ref numDevices, (uint) Unsafe.SizeOf<RawInputDeviceList>());
+            uint numDevices = GetRawInputDeviceCount();
             if (numDevices == 0)
                 return new Dictionary<IntPtr, DeviceInfo>(0);
 
             // Query info about the devices
-            var rawInputDevices = new RawInputDeviceList[numDevices];
-            GetRawInputDeviceList(rawInputDevices, ref numDevices, (uint) Unsafe.SizeOf<RawInputDeviceList>());
+            Span<RawInputDeviceList> rawInputDevices = stackalloc RawInputDeviceList[(int) numDevices];
+            GetRawInputDeviceList(rawInputDevices);
+
             var devices = new Dictionary<IntPtr, DeviceInfo>((int) numDevices);
             for (int index = 0; index < numDevices; ++index)
             {
@@ -55,25 +55,15 @@ namespace Blaze.Framework.RawInput
         /// </summary>
         /// <param name="deviceHandle">Handle of the device.</param>
         /// <returns>An instance of <see cref="DeviceInfo"/>.</returns>
-        private static unsafe DeviceInfo GetDeviceInfo(IntPtr deviceHandle)
+        private static DeviceInfo GetDeviceInfo(IntPtr deviceHandle)
         {
-            // Get the name of the device
-            uint nameLength = 0;
-            GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceName, IntPtr.Zero, ref nameLength);
-            char* nameChars = stackalloc char[(int)nameLength];
-            GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceName, (IntPtr) nameChars, ref nameLength);
+            string deviceName = GetRawInputDeviceName(deviceHandle);
 
-            int indexCh = 0;
-            do { } while (indexCh <= nameLength && nameChars[indexCh++] != 0);
-            string deviceName = new string(nameChars, 0, indexCh == 0 ? 0 : indexCh - 1);
+            uint deviceInfoLength = GetRawInputDeviceInfoSize(deviceHandle);
+            Span<byte> deviceInfoData = stackalloc byte[(int) deviceInfoLength];
+            ref RawDeviceInformation deviceInfo = ref GetRawInputDeviceInfo(deviceHandle, deviceInfoData);
 
-            // Get device info
-            uint infoLength = 0;
-            GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceInfo, IntPtr.Zero, ref infoLength);
-            byte* infoBytes = stackalloc byte[(int)infoLength];
-            GetRawInputDeviceInfo(deviceHandle, RawInputDeviceInfoType.DeviceInfo, (IntPtr) infoBytes, ref infoLength);
-
-            return DeviceInfo.Create(ref *(RawDeviceInformation*) infoBytes, deviceName, deviceHandle);
+            return DeviceInfo.Create(ref deviceInfo, deviceName, deviceHandle);
         }
 
         /// <summary>

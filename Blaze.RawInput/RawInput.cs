@@ -49,13 +49,13 @@ namespace Blaze.Framework.RawInput
         /// <param name="options">The options for registering the device.</param>
         public static void RegisterDevice(UsagePage usagePage, UsageId usageId, DeviceFlags flags, IntPtr targetHwnd, RegisterDeviceOptions options = RegisterDeviceOptions.Default)
         {
-            Span<RawInputDevice> rawInputDevice = stackalloc RawInputDevice[1];
-            rawInputDevice[0].UsagePage = usagePage;
-            rawInputDevice[0].UsageId = usageId;
-            rawInputDevice[0].Flags = flags;
-            rawInputDevice[0].Target = targetHwnd;
+            RawInputDevice rawInputDevice;
+            rawInputDevice.UsagePage = usagePage;
+            rawInputDevice.UsageId = usageId;
+            rawInputDevice.Flags = flags;
+            rawInputDevice.Target = targetHwnd;
 
-            RegisterRawInputDevices(rawInputDevice);
+            RegisterRawInputDevice(rawInputDevice);
 
             if (options == RegisterDeviceOptions.NoFiltering || rawInputMessageFilter != null)
                 return;
@@ -96,11 +96,7 @@ namespace Blaze.Framework.RawInput
             // While we keep reading messages, fill the buffer and process them one by one
             while (true)
             {
-                var result = GetRawInputBuffer(buffer);
-                if (result.Failure)
-                    throw new RawInputException(result);
-
-                var eventCount = (int) result;
+                var eventCount = GetRawInputBuffer(buffer);
                 if (eventCount == 0)
                     break;
 
