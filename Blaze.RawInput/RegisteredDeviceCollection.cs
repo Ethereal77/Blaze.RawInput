@@ -60,7 +60,13 @@ namespace Blaze.Framework.RawInput
         /// <value>The number of available devices contained in this <see cref="DeviceInfoCollection"/>.</value>
         public int Count => registeredDevices.Length;
 
-        IEnumerator<RegisteredDevice> IEnumerable<RegisteredDevice>.GetEnumerator() => (IEnumerator<RegisteredDevice>) registeredDevices.GetEnumerator();
+        IEnumerator<RegisteredDevice> IEnumerable<RegisteredDevice>.GetEnumerator()
+        {
+            foreach (var device in registeredDevices)
+            {
+                yield return device;
+            }
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => registeredDevices.GetEnumerator();
 
