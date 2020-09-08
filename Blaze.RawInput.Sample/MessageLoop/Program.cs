@@ -4,6 +4,8 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
+using static System.Console;
+
 namespace Blaze.Framework.RawInput.Sample
 {
     /// <summary>
@@ -19,6 +21,9 @@ namespace Blaze.Framework.RawInput.Sample
         {
             var form = CreateWindow();
 
+            // Show info/instructions about this sample
+            ShowInfo();
+
             // Information about the available devices
             ListDevices();
 
@@ -29,11 +34,26 @@ namespace Blaze.Framework.RawInput.Sample
             // Listen to device changes
             RawInput.DeviceChanged += OnDeviceChanged;
 
-            Console.WriteLine();
+            WriteLine();
 
             RawInput.StartProcessingMessages(form.Handle);
             Application.Run(form);
             RawInput.StopProcessingMessages();
+        }
+
+        private static void ShowInfo()
+        {
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.White;
+            WriteLine("RawInput, Message-based Input Processing sample");
+            WriteLine("===============================================");
+            WriteLine();
+            WriteLine("This sample shows the received raw input events as they are received by the");
+            WriteLine("window message loop.");
+            WriteLine();
+            WriteLine("Close the window to end the sample.");
+            WriteLine();
+            ForegroundColor = fg;
         }
 
         private static Form CreateWindow()
@@ -70,22 +90,22 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void ListDevices()
         {
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Yellow;
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.Yellow;
 
             foreach (var device in RawInput.Devices)
             {
                 PrintDevice(device);
-                Console.WriteLine();
+                WriteLine();
             }
 
-            Console.ForegroundColor = fg;
+            ForegroundColor = fg;
         }
 
         private static void PrintDevice(DeviceInfo device)
         {
-            Console.WriteLine($"Device: 0x{device.Handle.ToString("X")} Type: {device.Type} Name: {device.Name}");
-            Console.WriteLine(device switch
+            WriteLine($"Device: 0x{device.Handle.ToString("X")} Type: {device.Type} Name: {device.Name}");
+            WriteLine(device switch
             {
                 KeyboardInfo kbd => $"  Total keys: {kbd.TotalKeyCount}, Function Keys: {kbd.FunctionKeyCount}, Indicators: {kbd.IndicatorCount}, " +
                                     $"Type: {kbd.KeyboardType:x}-{kbd.Subtype:x}, Mode: {kbd.KeyboardMode:x}",
@@ -100,12 +120,12 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void RegisterMouse(DeviceFlags deviceFlags, IntPtr windowHandle = default)
         {
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.Green;
 
-            Console.WriteLine($"Registering mouse devices with flags [{deviceFlags}].");
+            WriteLine($"Registering mouse devices with flags [{deviceFlags}].");
 
-            Console.ForegroundColor = fg;
+            ForegroundColor = fg;
 
             RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericMouse, deviceFlags, windowHandle);
             RawInput.MouseInput += OnMouseInput;
@@ -113,12 +133,12 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void RegisterKeyboard(DeviceFlags deviceFlags, IntPtr windowHandle = default)
         {
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Green;
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.Green;
 
-            Console.WriteLine($"Registering keyboard devices with flags [{deviceFlags}].");
+            WriteLine($"Registering keyboard devices with flags [{deviceFlags}].");
 
-            Console.ForegroundColor = fg;
+            ForegroundColor = fg;
 
             RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericKeyboard, deviceFlags, windowHandle);
             RawInput.KeyboardInput += OnKeyboardInput;
@@ -126,30 +146,30 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
         private static void OnKeyboardInput(IntPtr device, IntPtr hwnd, in KeyboardInputEventArgs args)
         {
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"Window 0x{hwnd.ToString("X")}, Device 0x{device.ToString("X")}, Mode: {args.InputMode}: ");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine($"Key: {args.Key}, Make code: {args.MakeCode}, State: {args.State}, ScanCodeFlags: {args.ScanCodeFlags}");
-            Console.ForegroundColor = fg;
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.DarkGray;
+            Write($"Window 0x{hwnd.ToString("X")}, Device 0x{device.ToString("X")}, Mode: {args.InputMode}: ");
+            ForegroundColor = ConsoleColor.Gray;
+            WriteLine($"Key: {args.Key}, Make code: {args.MakeCode}, State: {args.State}, ScanCodeFlags: {args.ScanCodeFlags}");
+            ForegroundColor = fg;
         }
 
         private static void OnMouseInput(IntPtr device, IntPtr hwnd, in MouseInputEventArgs args)
         {
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($"Window 0x{hwnd.ToString("X")}, Device 0x{device.ToString("X")}, Mode: {args.InputMode}: ");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine($"(X:{args.X}, Y:{args.Y}), State: {args.Mode}, Buttons: {args.Buttons:x} {args.ButtonFlags}, Wheel: {args.WheelDelta}");
-            Console.ForegroundColor = fg;
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.DarkGray;
+            Write($"Window 0x{hwnd.ToString("X")}, Device 0x{device.ToString("X")}, Mode: {args.InputMode}: ");
+            ForegroundColor = ConsoleColor.Gray;
+            WriteLine($"(X:{args.X}, Y:{args.Y}), State: {args.Mode}, Buttons: {args.Buttons:x} {args.ButtonFlags}, Wheel: {args.WheelDelta}");
+            ForegroundColor = fg;
         }
 
         private static void OnDeviceChanged(IntPtr device, DeviceChange change)
         {
-            var fg = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.Cyan;
 
-            Console.WriteLine(change switch
+            WriteLine(change switch
             {
                 DeviceChange.Arrival => $"The device 0x{device.ToString("X")} has been added to the system." + Environment.NewLine +
                                         "  " + RawInput.Devices[device] switch
@@ -165,7 +185,7 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
                 _ => "Unknown device change notification!"
             });
 
-            Console.ForegroundColor = fg;
+            ForegroundColor = fg;
         }
     }
 }
