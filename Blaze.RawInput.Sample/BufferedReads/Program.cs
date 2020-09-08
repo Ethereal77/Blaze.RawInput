@@ -31,10 +31,11 @@ namespace Blaze.Framework.RawInput.Sample
             // Setup the devices
             RegisterMouse(DeviceFlags.InputSink | DeviceFlags.DeviceNotify, form.Handle);
             RegisterKeyboard(DeviceFlags.None);
-
-            // Ctrl + C closes the app
-            form.FormClosed += (s, e) => isWindowVisible = false;
             WriteLine();
+
+            ShowRegisteredDevices();
+
+            form.FormClosed += (s, e) => isWindowVisible = false;
 
             // Check for input every 500ms
             do
@@ -155,6 +156,24 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
             // We don't use message filtering as we'll be polling manually
             RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericKeyboard, deviceFlags, windowHandle);
             RawInput.KeyboardInput += OnKeyboardInput;
+        }
+
+        private static void ShowRegisteredDevices()
+        {
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.Green;
+
+            WriteLine("Registered devices:");
+            foreach (var device in RawInput.RegisteredDevices)
+            {
+                var windowHandle = device.TargetWindow == default ? "<unspecified>" : "0x" + device.TargetWindow.ToString("X");
+
+                WriteLine($"  HWnd: {windowHandle}, Usage page: {device.UsagePage}, Usage id: {device.UsageId}, Flags: {device.Flags}");
+            }
+
+            ForegroundColor = fg;
+
+            WriteLine();
         }
 
         private static void OnKeyboardInput(IntPtr device, IntPtr hwnd, in KeyboardInputEventArgs args)

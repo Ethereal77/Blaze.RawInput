@@ -31,10 +31,12 @@ namespace Blaze.Framework.RawInput.Sample
             RegisterMouse(DeviceFlags.InputSink | DeviceFlags.DeviceNotify, form.Handle);
             RegisterKeyboard(DeviceFlags.None);
 
+            WriteLine();
+
             // Listen to device changes
             RawInput.DeviceChanged += OnDeviceChanged;
 
-            WriteLine();
+            ShowRegisteredDevices();
 
             RawInput.StartProcessingMessages(form.Handle);
             Application.Run(form);
@@ -142,6 +144,24 @@ Move the mouse, press kays on the keyboard or use a gamepad to view a log of the
 
             RawInput.RegisterDevice(UsagePage.Generic, UsageId.GenericKeyboard, deviceFlags, windowHandle);
             RawInput.KeyboardInput += OnKeyboardInput;
+        }
+
+        private static void ShowRegisteredDevices()
+        {
+            var fg = ForegroundColor;
+            ForegroundColor = ConsoleColor.Green;
+
+            WriteLine("Registered devices:");
+            foreach (var device in RawInput.RegisteredDevices)
+            {
+                var windowHandle = device.TargetWindow == default ? "<unspecified>" : "0x" + device.TargetWindow.ToString("X");
+
+                WriteLine($"  HWnd: {windowHandle}, Usage page: {device.UsagePage}, Usage id: {device.UsageId}, Flags: {device.Flags}");
+            }
+
+            ForegroundColor = fg;
+
+            WriteLine();
         }
 
         private static void OnKeyboardInput(IntPtr device, IntPtr hwnd, in KeyboardInputEventArgs args)
